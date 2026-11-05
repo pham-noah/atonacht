@@ -30,3 +30,33 @@ export async function fetchSyncStatus(baseUrl: string, apiKey: string, fetcher: 
   );
   return { devices, folders };
 }
+
+/**
+ * Turns whatever the transport said into something a reader can act on.
+ *
+ * The HTTP plugin reports failures as reqwest messages ("error sending request for url (...)"), which says nothing
+ * about whether Syncthing is not running, the key is wrong, or the address is another machine's.
+ */
+export function describeSyncError(raw: string, url: string): string {
+  const u = url.replace(/\/+$/, "");
+  const loopback = /(127\.0\.0\.1|localhost|\[::1\])/.test(u);
+  if (/rejected the API key|unauthori[sz]ed|forbidden|\b401\b|\b403\b/i.test(raw)) {
+    return `Syncthing answered at ${u}, but it did not accept that key. Copy the API key again from Settings → General.`;
+  }
+  if (/error sending request|dns error|connection refused|Connect\(|os error 1\d{4}|timed? ?out|network is unreachable/i.test(raw)) {
+    return loopback
+      ? `Nothing answered at ${u}. On this device, start Syncthing (or Syncthing-Fork) and leave it running — its web interface is what Atonacht asks. To read another device instead, use that device's address, e.g. http://192.168.1.20:8384.`
+      : `Nothing answered at ${u}. Check that Syncthing is running on that device, that the address is right, and that both devices are on the same network.`;
+  }
+  if (/certificate|tls|ssl|handshake/i.test(raw)) {
+    return `${u} answered, but its certificate was refused. For a local Syncthing use http://, or fix the certificate.`;
+  }
+  return `Could not read Syncthing: ${raw}`;
+}
+
+/** The other way to spell the same loopback address, when the first one refused the connection. */
+export function alternateLoopback(url: string): string | null {
+  if (/127\.0\.0\.1/.test(url)) return url.replace("127.0.0.1", "localhost");
+  if (/localhost/.test(url)) return url.replace("localhost", "127.0.0.1");
+  return null;
+}

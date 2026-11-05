@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveBytes } from "../lib/exportFile";
-import { Fetcher, SyncStatus, fetchSyncStatus } from "../lib/syncthing";
+import { Fetcher, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus } from "../lib/syncthing";
 import { noteCache } from "../lib/noteCache";
 import { fs, isTauri } from "../lib/backend";
 import { DAILY_TEMPLATE, STARTERS } from "../lib/templates";
@@ -334,21 +334,37 @@ function SyncthingStatus() {
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
 
   const check = async () => {
     setBusy(true);
     setErr("");
+    setNote("");
+    // Inside the app the request goes through Tauri's HTTP plugin (limited to localhost); a browser would be blocked by CORS.
+    const f = (isTauri() ? (await import("@tauri-apps/plugin-http")).fetch : window.fetch.bind(window)) as unknown as Fetcher;
+    // 127.0.0.1 and localhost are the same machine but not always the same listener, so try the other spelling before
+    // giving up, and keep whichever answered.
+    const tries = [prefs.syncthingUrl];
+    const alt = alternateLoopback(prefs.syncthingUrl);
+    if (alt) tries.push(alt);
+    let last = "";
     try {
-      // Inside the app the request goes through Tauri's HTTP plugin (limited to localhost); a browser would be blocked by CORS.
-      const f = (isTauri() ? (await import("@tauri-apps/plugin-http")).fetch : window.fetch.bind(window)) as unknown as Fetcher;
-      setStatus(await fetchSyncStatus(prefs.syncthingUrl, prefs.syncthingKey, f));
-    } catch (e) {
+      for (const url of tries) {
+        try {
+          setStatus(await fetchSyncStatus(url, prefs.syncthingKey, f));
+          if (url !== prefs.syncthingUrl) {
+            setPrefs({ syncthingUrl: url });
+            setNote(`Syncthing answered at ${url.replace(/\/+$/, "")} — that address is saved now.`);
+          }
+          return;
+        } catch (e) {
+          last = e instanceof Error ? e.message : String(e);
+          // a rejected key will be rejected everywhere: no point trying the other spelling
+          if (/rejected the API key|\b401\b|\b403\b/i.test(last)) break;
+        }
+      }
       setStatus(null);
-      const raw = e instanceof Error ? e.message : String(e);
-      // say what to do, instead of repeating what the browser said
-      if (/rejected the API key|401|403/i.test(raw)) setErr("Syncthing answered, but it did not accept that key. Copy the API key again from Settings → General.");
-      else if (/Failed to fetch|NetworkError|load failed|CORS/i.test(raw)) setErr(`Nothing answered at ${prefs.syncthingUrl}. Is Syncthing running on that device, and is the address right? (The browser demo cannot reach it at all.)`);
-      else setErr(`Could not read Syncthing: ${raw}`);
+      setErr(describeSyncError(last, prefs.syncthingUrl) + (isTauri() ? "" : " The browser demo cannot reach Syncthing at all."));
     } finally {
       setBusy(false);
     }
@@ -362,6 +378,7 @@ function SyncthingStatus() {
         <label className="field"><span>API key</span><input className="in mono" type="password" value={prefs.syncthingKey} onChange={(e) => setPrefs({ syncthingKey: e.target.value })} spellCheck={false} autoComplete="off" placeholder="Paste the key" /></label>
         <div className="btnrow start"><button className="btn" type="submit" disabled={busy || !prefs.syncthingKey}>{busy ? "Checking…" : "Test connection"}</button></div>
       </form>
+      {note && <p className="muted small">{note}</p>}
       {err && <p className="errtext">{err}</p>}
       {status && (
         <>
