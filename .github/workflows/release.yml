@@ -37,12 +37,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev pkg-config
       - run: npm ci
+      - name: Read the version
+        id: ver
+        run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Atonacht ${{ github.ref_name }}
+          tagName: ${{ steps.ver.outputs.tag }}
+          releaseName: Atonacht ${{ steps.ver.outputs.tag }}
           releaseDraft: true
           args: ${{ matrix.args }}
 
@@ -81,6 +84,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev pkg-config
       - run: npm ci
+      - name: Read the version
+        id: ver
+        run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Create the Android project and add the widget, share receiver and permissions
         run: npm run android:setup
       - name: Build an unsigned APK
@@ -90,6 +96,7 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          VERSION: ${{ steps.ver.outputs.tag }}
         run: |
           BT="$ANDROID_HOME/build-tools/35.0.0"
           UNSIGNED=$(find src-tauri/gen/android -name '*-release-unsigned.apk' | head -n1)
@@ -97,9 +104,11 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           "$BT/zipalign" -f -p 4 "$UNSIGNED" "$RUNNER_TEMP/aligned.apk"
           "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KEY_ALIAS" \
-            --ks-pass env:KEYSTORE_PASSWORD --out "Atonacht-${GITHUB_REF_NAME}.apk" "$RUNNER_TEMP/aligned.apk"
-          "$BT/apksigner" verify "Atonacht-${GITHUB_REF_NAME}.apk"
+            --ks-pass env:KEYSTORE_PASSWORD --out "Atonacht-${VERSION}.apk" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" verify "Atonacht-${VERSION}.apk"
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Atonacht ${{ steps.ver.outputs.tag }}
           draft: true
           files: Atonacht-*.apk
