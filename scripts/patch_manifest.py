@@ -26,6 +26,13 @@ if missing:
     i = text.index("<application")
     text = text[:i] + "\n    ".join(missing) + "\n    " + text[i:]
 
+# Android's automatic backup would copy the app's own note cache into Google's cloud. The notes folder is the user's
+# own (Syncthing backs it up); the cache should not be a second, invisible copy.
+m = re.search(r"<application\b[^>]*?>", text)
+if m and "android:allowBackup" not in m.group(0):
+    tag = m.group(0)[:-1].rstrip() + '\n        android:allowBackup="false"\n        android:fullBackupContent="false">'
+    text = text.replace(m.group(0), tag, 1)
+
 # The keyboard must not resize or slide the page: with adjustNothing the window keeps its size, so the note and the
 # lists stay exactly where they were and only a dialog (or the caret) is lifted above the keyboard by the web layer.
 m = re.search(r"<activity\b[^>]*?android:name=\"\.MainActivity\"[^>]*?>", text)

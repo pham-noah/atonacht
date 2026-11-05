@@ -141,3 +141,9 @@ See `RELEASING.md` for versioning, signing and where to publish.
 - **Pressing a task** renames it (one small sheet). **Holding** it opens the whole editor: due date, priority, repeat, board column.
 - **Full screen**: the status bar and the navigation bar stay hidden, like a reader in a book. Swipe from an edge to pull them in for a moment.
 
+## Publishing and the Play Store
+
+- **Licence**: Apache-2.0 (`LICENSE`). The bundled fonts are SIL OFL 1.1 (`licences/`), the libraries are listed in `THIRD-PARTY.md`.
+- **Android signing**: the release key lives in `Atonacht-keys/` (git-ignored, never committed). `scripts/sign-release.sh` signs an APK with it; the CI workflow expects it as the secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS=atonacht`. An APK signed with a different key cannot update an installed one — keep that file.
+- **Backups**: `android:allowBackup` is `false`. The notes folder is the user's own (Syncthing copies it); the app's internal cache should not become a second, invisible copy in Google's cloud.
+- **Exact alarms**: reminders use `SCHEDULE_EXACT_ALARM`, which Google Play only allows with a declared, justified use (a reminder that fires at the minute the user chose). Publishing on Play means either documenting that use in the listing or accepting inexact delivery.
