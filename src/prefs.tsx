@@ -34,6 +34,10 @@ export interface Prefs {
   lockAfter: number; // ms in the background before locking
   syncthingUrl: string;
   syncthingKey: string;
+  /** GitHub as a notes remote: "owner/repo", branch, and a fine-grained token with Contents: read and write. */
+  githubRepo: string;
+  githubBranch: string;
+  githubToken: string;
   trashDays: number; // 0 = never empty the trash
   hideInRecents: boolean;
   blockScreenshots: boolean;
@@ -52,7 +56,7 @@ export const ACCENTS: Record<string, [string, string]> = {
 };
 
 const KEY = "atonacht.prefs";
-const DEFAULTS: Prefs = { theme: "glass", accent: "blue", root: "", onboarded: false, carryDismissed: "", reduceTransparency: false, textSize: 15, editorFont: "sans", editorSize: 16, lineHeight: 1.7, livePreview: true, spellcheck: true, startScreen: "home", weekStart: "mon", density: "comfortable", openTodayOnLaunch: false, defaultDue: "none", carryOver: "ask", doneDays: 7, repeatFrom: "due", dailyDir: "Daily notes", autoCreateDaily: true, remind: DEFAULT_REMIND, tabs: ["home", "tasks", "board", "notes", "calendar"], swipeRight: "complete", swipeLeft: "tomorrow", appLock: false, lockAfter: 60_000, syncthingUrl: "http://127.0.0.1:8384", syncthingKey: "", trashDays: 30, hideInRecents: false, blockScreenshots: false, startupCache: true, kanbanColumns: ["Doing"], boardSort: "urgency" };
+const DEFAULTS: Prefs = { theme: "glass", accent: "blue", root: "", onboarded: false, carryDismissed: "", reduceTransparency: false, textSize: 15, editorFont: "sans", editorSize: 16, lineHeight: 1.7, livePreview: true, spellcheck: true, startScreen: "home", weekStart: "mon", density: "comfortable", openTodayOnLaunch: false, defaultDue: "none", carryOver: "ask", doneDays: 7, repeatFrom: "due", dailyDir: "Daily notes", autoCreateDaily: true, remind: DEFAULT_REMIND, tabs: ["home", "tasks", "board", "notes", "calendar"], swipeRight: "complete", swipeLeft: "tomorrow", appLock: false, lockAfter: 60_000, syncthingUrl: "http://127.0.0.1:8384", syncthingKey: "", githubRepo: "", githubBranch: "main", githubToken: "", trashDays: 30, hideInRecents: false, blockScreenshots: false, startupCache: true, kanbanColumns: ["Doing"], boardSort: "urgency" };
 
 function load(): Prefs {
   try {

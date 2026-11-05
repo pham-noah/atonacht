@@ -9,6 +9,8 @@ import { ACCENTS, Theme, usePrefs } from "../prefs";
 import { useStore } from "../store";
 import { openExternal } from "../lib/update";
 import { syncthingFetcher } from "../lib/syncthingFetch";
+import { githubFetcher } from "../lib/githubFetch";
+import { parseRepo, pullNotes, pushNotes } from "../lib/github";
 import { Choice, Group, Row, Slider, TimeField, Toggle } from "./SettingsParts";
 
 const THEMES: [Theme, string, string][] = [
@@ -218,6 +220,8 @@ export function SyncPanel() {
   const { go } = useNav();
   const [path, setPath] = useState(prefs.root);
   const [label, setLabel] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [checkMsg, setCheckMsg] = useState("");
   useEffect(() => {
     if (prefs.root && fs.describeRoot) fs.describeRoot(prefs.root).then(setLabel).catch(() => setLabel(""));
   }, [prefs.root]);
@@ -238,9 +242,35 @@ export function SyncPanel() {
         {!fs.native && <p className="muted small">You are running the browser demo. Notes are kept in this browser, not in files.</p>}
       </Group>
       <SyncSetup folder={path.startsWith("saf:") ? label || path : path} />
+      <GitHubSetup />
       <Group title="When something changes">
         <Row label="Conflicts" hint="Atonacht keeps both copies instead of choosing for you">{conflicts.length ? <button className="pill on" onClick={() => go({ name: "conflicts" })}>{conflicts.length} to review</button> : <span className="chip hi">None</span>}</Row>
-        <Row label="Pick up changes now" hint="Atonacht watches the folder; this forces a re-read"><button className="pill" onClick={refresh}>Check now</button></Row>
+        <Row label="Pick up changes now" hint="Atonacht watches the folder every few seconds; this forces a re-read now">
+          <button
+            className="pill"
+            disabled={checking}
+            onClick={async () => {
+              setChecking(true);
+              setCheckMsg("");
+              try {
+                const r = await refresh();
+                const total = Object.keys(notes).length;
+                setCheckMsg(
+                  r.updated || r.removed
+                    ? `${r.updated} note${r.updated === 1 ? "" : "s"} picked up${r.removed ? `, ${r.removed} gone` : ""}.`
+                    : `Checked this folder — nothing changed${total ? ` in ${total} note${total === 1 ? "" : "s"}` : ""}.`,
+                );
+              } catch (e) {
+                setCheckMsg(`Could not read the folder: ${e instanceof Error ? e.message : e}`);
+              } finally {
+                setChecking(false);
+              }
+            }}
+          >
+            {checking ? "Checking…" : "Check now"}
+          </button>
+        </Row>
+        {checkMsg && <p className="muted small" role="status">{checkMsg}</p>}
         {!fs.native && <Row label="Demo notes" hint="Throw away what the browser demo stored"><button className="pill" onClick={() => { localStorage.removeItem("atonacht.demo"); location.reload(); }}>Reset</button></Row>}
       </Group>
     </>
@@ -257,6 +287,108 @@ function shortAgo(iso: string): string {
   const mins = Math.round(secs / 60);
   if (mins < 90) return `${mins} min ago`;
   return `${Math.round(mins / 60)} h ago`;
+}
+
+/**
+ * GitHub as a remote for the notes folder.
+ *
+ * It is not Syncthing and does not pretend to be: nothing arrives until the app asks, and two devices editing at once
+ * produce a conflict to resolve, not a merge. What it gives is the folder in version control, off this device.
+ */
+function GitHubSetup() {
+  const { prefs, setPrefs } = usePrefs();
+  const { all, save } = useStore();
+  const [busy, setBusy] = useState<"" | "pull" | "push" | "test">("");
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const repo = parseRepo(prefs.githubRepo);
+  const ready = !!repo && !!prefs.githubToken;
+
+  const run = async (what: "pull" | "push" | "test") => {
+    if (!repo) { setErr("That is not a repository. Write owner/repo, for example pham-noah/notes."); return; }
+    setBusy(what);
+    setErr("");
+    setMsg("");
+    try {
+      const f = await githubFetcher();
+      if (what === "push") {
+        const out = await pushNotes(repo, prefs.githubBranch, prefs.githubToken, all, f);
+        setMsg(out ? `Committed ${out.files} note${out.files === 1 ? "" : "s"} as ${out.commit.slice(0, 7)}.` : "Nothing to commit — the repository already matches this folder.");
+      } else {
+        const out = await pullNotes(repo, prefs.githubBranch, prefs.githubToken, f);
+        let added = 0;
+        let copies = 0;
+        for (const [path, content] of Object.entries(out.files)) {
+          const here = all[path];
+          if (here === content) continue;
+          if (here === undefined) {
+            await save(path, content);
+            added++;
+            continue;
+          }
+          // Never overwrite what is on this device from a copy that may be older: keep the remote text beside it.
+          const dot = path.lastIndexOf(".");
+          const beside = dot > 0 ? `${path.slice(0, dot)} (github)${path.slice(dot)}` : `${path} (github)`;
+          await save(beside, content);
+          copies++;
+        }
+        setMsg(
+          what === "test"
+            ? `${Object.keys(out.files).length} notes in ${repo.owner}/${repo.repo} at ${out.commit.slice(0, 7)}.`
+            : `Read ${Object.keys(out.files).length} notes at ${out.commit.slice(0, 7)}: ${added} added, ${copies} kept beside yours, ${Object.keys(out.files).length - added - copies} already the same.`,
+        );
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return (
+    <Group title="GitHub">
+      <Row label="Repository" hint="owner/repo, or paste the URL. Make it private unless you want the notes public.">
+        <input
+          className="in mono"
+          value={prefs.githubRepo}
+          placeholder="pham-noah/notes"
+          spellCheck={false}
+          onChange={(e) => setPrefs({ githubRepo: e.target.value })}
+        />
+      </Row>
+      <Row label="Branch" hint="The branch is created on the first push if it does not exist.">
+        <input
+          className="in mono"
+          value={prefs.githubBranch}
+          placeholder="main"
+          spellCheck={false}
+          onChange={(e) => setPrefs({ githubBranch: e.target.value })}
+        />
+      </Row>
+      <Row label="Token" hint="A fine-grained token with Contents: read and write on this one repository. It stays on this device.">
+        <input
+          className="in mono"
+          type="password"
+          value={prefs.githubToken}
+          placeholder="github_pat_…"
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(e) => setPrefs({ githubToken: e.target.value })}
+        />
+      </Row>
+      <p className="muted small">
+        One commit per sync, not one per note. Nothing is fetched until you press Pull, so GitHub is a copy you can trust
+        with history — not a live sync like Syncthing. Press Push first to send what is here.
+      </p>
+      <div className="btnrow start">
+        <button className="btn" type="button" disabled={!ready || !!busy} onClick={() => run("push")}>{busy === "push" ? "Pushing…" : "Push now"}</button>
+        <button className="pill" type="button" disabled={!ready || !!busy} onClick={() => run("pull")}>{busy === "pull" ? "Pulling…" : "Pull now"}</button>
+        <button className="pill" type="button" disabled={!ready || !!busy} onClick={() => run("test")}>{busy === "test" ? "Checking…" : "Test"}</button>
+      </div>
+      {msg && <p className="muted small">{msg}</p>}
+      {err && <p className="errtext">{err}</p>}
+    </Group>
+  );
 }
 
 /**

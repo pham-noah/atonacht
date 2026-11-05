@@ -62,7 +62,8 @@ interface Store {
   resolve: (c: Conflict, how: Resolution) => Promise<void>;
   /** Saves a version merged by hand and clears the conflict copy. */
   resolveMerged: (c: Conflict, text: string) => Promise<void>;
-  refresh: () => Promise<void>;
+  /** Re-reads the folder. Returns how many notes were picked up or dropped, so a button can say what it did. */
+  refresh: () => Promise<{ updated: number; removed: number }>;
   loadTrash: () => Promise<Entry[]>;
   restore: (trashPath: string) => Promise<string>;
   purge: (trashPath: string) => Promise<void>;
@@ -126,8 +127,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persist(n ? { [p]: n } : {}, n ? [] : [p]);
   }, [persist]);
 
-  const refresh = useCallback(async () => {
-    if (!root || writing.current > 0) return; // never read a note while we are in the middle of saving it
+  const refresh = useCallback(async (): Promise<{ updated: number; removed: number }> => {
+    if (!root || writing.current > 0) return { updated: 0, removed: 0 }; // never read a note while we are in the middle of saving it
     try {
       const entries = await fs.list(root);
       const files = entries.filter((e) => e.kind === "file");
@@ -145,18 +146,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         next[e.path] = fresh[e.path] = { content: await fs.read(root, e.path), mtime: e.mtime, size: e.size };
         changed = true;
       });
+      const removed = Object.keys(cur).filter((p) => !(p in next));
       if (changed) {
-        persist(fresh, Object.keys(cur).filter((p) => !(p in next)));
+        persist(fresh, removed);
         ref.current = next;
         setData(next);
       }
       const d = entries.filter((e) => e.kind === "dir").map((e) => e.path);
       setDirs((old) => (old.join("|") === d.join("|") ? old : d));
       setError(null);
+      setReady(true);
+      return { updated: Object.keys(fresh).length, removed: removed.length };
     } catch (e) {
       setError(String(e));
+      setReady(true);
+      return { updated: 0, removed: 0 };
     }
-    setReady(true);
   }, [root, persist]);
 
   useEffect(() => {
