@@ -46,12 +46,13 @@ describe("scanning this device for a listening Syncthing", () => {
     expect(new Set(list).size).toBe(list.length); // no duplicates
   });
 
-  it("keeps only the addresses that answered", async () => {
+  it("reports every address it tried, not only the ones that answered", async () => {
     const fetcher: Fetcher = async (url) => {
       if (url.startsWith("http://192.168.1.50:8384")) return { ok: true, status: 200, json: async () => ({}) };
       throw new Error("error sending request for url (" + url + ")");
     };
     const hits = await scanSyncthing("http://127.0.0.1:8384", ["192.168.1.50"], fetcher);
-    expect(hits.map((h) => h.url)).toEqual(["http://192.168.1.50:8384"]);
+    expect(hits.filter((h) => h.health === "ok").map((h) => h.url)).toEqual(["http://192.168.1.50:8384"]);
+    expect(hits.length).toBeGreaterThan(5); // the refusals are kept, so the UI can say how many were tried
   });
 });

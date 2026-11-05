@@ -33,3 +33,6 @@ ndk-context = "0.1"
 
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
 tauri-plugin-biometric = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }

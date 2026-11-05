@@ -120,8 +120,12 @@ export function scanCandidates(typed: string, lanIps: string[]): string[] {
   return [...new Set(out)];
 }
 
-/** Which of those addresses actually answered (health endpoint, no key needed). */
+/**
+ * Every address that was tried, with what came back.
+ *
+ * "Other" matters as much as the rest: it is how a failure inside the app itself (a command that is not registered, a
+ * permission, a broken transport) shows up, and filtering it out would blame the network for the app's own problem.
+ */
 export async function scanSyncthing(typed: string, lanIps: string[], fetcher: Fetcher): Promise<Probe[]> {
-  const all = await Promise.all(scanCandidates(typed, lanIps).map((u) => probeUrl(u, "", fetcher)));
-  return all.filter((p) => p.health === "ok" || p.health === "tls");
+  return Promise.all(scanCandidates(typed, lanIps).map((u) => probeUrl(u, "", fetcher)));
 }

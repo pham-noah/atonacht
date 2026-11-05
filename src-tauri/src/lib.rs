@@ -38,8 +38,7 @@ fn local_ips() -> Vec<String> {
 /// The app talks to Syncthing's local web interface, which is plain HTTP on a loopback or LAN address. Doing it here
 /// instead of through the web layer means no plugin URL scope to get wrong, no browser CORS, and the same behaviour on
 /// Android; the error string is what the UI turns into advice.
-#[tauri::command]
-async fn sync_get(url: String, path: String, key: String) -> Result<serde_json::Value, String> {
+async fn sync_get_at(url: &str, path: &str, key: &str) -> Result<serde_json::Value, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(6))
         .build()
@@ -59,6 +58,11 @@ async fn sync_get(url: String, path: String, key: String) -> Result<serde_json::
         return Err(format!("Syncthing answered {} for {} ({}).", status.as_u16(), path, full));
     }
     res.json::<serde_json::Value>().await.map_err(|e| format!("Syncthing sent something unreadable: {}", e))
+}
+
+#[tauri::command]
+async fn sync_get(url: String, path: String, key: String) -> Result<serde_json::Value, String> {
+    sync_get_at(&url, &path, &key).await
 }
 
 #[tauri::command]
@@ -209,4 +213,49 @@ pub fn run() {
     builder
         .run(tauri::generate_context!())
         .expect("error while running Atonacht");
+}
+
+#[cfg(test)]
+mod sync_tests {
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+
+    /// One-request HTTP server: proves the app's own request path (reqwest + JSON) against a socket, with no Syncthing.
+    fn serve_once(response: &'static str) -> u16 {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            if let Ok((mut stream, _)) = listener.accept() {
+                let mut buf = [0u8; 1024];
+                let _ = stream.read(&mut buf);
+                let _ = stream.write_all(response.as_bytes());
+            }
+        });
+        port
+    }
+
+    #[tokio::test]
+    async fn reads_json_from_a_local_endpoint() {
+        let port = serve_once("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 11\r\n\r\n{\"ok\":true}");
+        let value = sync_get_at(&format!("http://127.0.0.1:{}", port), "/rest/config", "k").await.expect("request");
+        assert_eq!(value["ok"], serde_json::json!(true));
+    }
+
+    #[tokio::test]
+    async fn a_rejected_key_says_so() {
+        let port = serve_once("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n");
+        let err = sync_get_at(&format!("http://127.0.0.1:{}", port), "/rest/config", "k").await.unwrap_err();
+        assert!(err.contains("rejected the API key"), "{}", err);
+    }
+
+    #[tokio::test]
+    async fn nothing_listening_is_an_error_not_a_panic() {
+        let port = {
+            let l = TcpListener::bind("127.0.0.1:0").unwrap();
+            l.local_addr().unwrap().port()
+        };
+        let err = sync_get_at(&format!("http://127.0.0.1:{}", port), "/rest/noauth/health", "").await.unwrap_err();
+        assert!(err.contains("error sending request") || err.contains("Connect"), "{}", err);
+    }
 }

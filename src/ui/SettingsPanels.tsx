@@ -338,6 +338,7 @@ function SyncthingStatus() {
   const [note, setNote] = useState("");
   const [probes, setProbes] = useState<Probe[]>([]);
   const [scan, setScan] = useState<Probe[] | null>(null);
+  const [ips, setIps] = useState<string[]>([]);
 
   const check = async () => {
     setBusy(true);
@@ -392,6 +393,7 @@ function SyncthingStatus() {
         const { invoke } = await import("@tauri-apps/api/core");
         ips = (await invoke<string[]>("local_ips").catch(() => [])) ?? [];
       }
+      setIps(ips);
       setScan(await scanSyncthing(prefs.syncthingUrl, ips, f));
     } finally {
       setBusy(false);
@@ -412,21 +414,28 @@ function SyncthingStatus() {
       {note && <p className="muted small">{note}</p>}
       {scan && (
         <div className="probes">
-          <div className="cap">Syncthing answered at</div>
-          {scan.length === 0 && (
+          <div className="cap">Scan of this device</div>
+          <p className="muted small">This device: {ips.length ? ips.join(", ") : "Rust side did not report an address"}</p>
+          {scan.every((p) => p.health === "unreachable") && (
             <p className="muted small">
-              Nothing answered anywhere on this device: not loopback, not IPv6, not the LAN address, on 8384 or 8385.
-              That means no web interface is listening — open Syncthing-Fork, check that its web GUI is enabled and running,
-              and copy the address it shows.
+              Nothing answered on any of these — loopback, IPv6 loopback and this device's own address, on 8384 and 8385.
+              If Syncthing-Fork says its web GUI is running, open that same address in Chrome on the phone: if Chrome loads
+              it and this list stays empty, the app cannot reach it and the reason is on this side, not in the address.
             </p>
           )}
-          {scan.map((p) => (
+          {scan.filter((p) => p.health !== "unreachable").map((p) => (
             <div key={p.url} className="probe">
               <span className="mono grow">{p.url}</span>
-              <span className={`chip${p.health === "ok" ? " hi" : ""}`}>{p.health === "ok" ? "Answers" : "HTTPS only"}</span>
-              <button className="pill" onClick={() => setPrefs({ syncthingUrl: p.url })}>Use</button>
+              <span className={`chip${p.health === "ok" ? " hi" : ""}`}>
+                {p.health === "ok" ? "Answers" : p.health === "tls" ? "HTTPS only" : "Request failed"}
+              </span>
+              {(p.health === "ok" || p.health === "tls") && <button className="pill" onClick={() => setPrefs({ syncthingUrl: p.url })}>Use</button>}
             </div>
           ))}
+          {scan.filter((p) => p.health === "other").slice(0, 3).map((p) => (
+            <p key={p.url + "detail"} className="mono small muted">{(p.detail || "no detail").slice(0, 160)}</p>
+          ))}
+          <p className="muted small">{scan.length} addresses tried.</p>
         </div>
       )}
       {probes.length > 0 && (
