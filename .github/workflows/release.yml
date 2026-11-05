@@ -61,9 +61,15 @@ jobs:
       - name: Install NDK, build tools and platform
         run: |
           # The setup-android action calls `sdkmanager tools`, a package that was removed; use the SDK's own manager.
-          SDKMAN="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          [ -x "$SDKMAN" ] || SDKMAN="$(find "$ANDROID_HOME" -name sdkmanager -type f | head -n1)"
-          yes | "$SDKMAN" --install "ndk;27.0.12077973" "build-tools;35.0.0" "platforms;android-35" > /dev/null
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          test -d "$SDK" || SDK="$(dirname "$(dirname "$(find / -name sdkmanager -type f 2>/dev/null | head -n1)")")"
+          SDKMAN="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMAN" ] || SDKMAN="$(find "$SDK" -name sdkmanager -type f | head -n1)"
+          # Tauri's CLI insists on a valid NDK_HOME, so publish both paths for the steps that follow.
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "NDK_HOME=$SDK/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          yes | "$SDKMAN" --install "ndk;28.2.13676358" "build-tools;35.0.0" "platforms;android-35" > /dev/null
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
@@ -76,12 +82,8 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev pkg-config
       - run: npm ci
       - name: Create the Android project and add the widget, share receiver and permissions
-        env:
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: npm run android:setup
       - name: Build an unsigned APK
-        env:
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: npx tauri android build --apk
       - name: Align and sign
         env:
