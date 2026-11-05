@@ -38,9 +38,35 @@ fn local_ips() -> Vec<String> {
 /// The app talks to Syncthing's local web interface, which is plain HTTP on a loopback or LAN address. Doing it here
 /// instead of through the web layer means no plugin URL scope to get wrong, no browser CORS, and the same behaviour on
 /// Android; the error string is what the UI turns into advice.
+/// True for the kinds of address a Syncthing GUI lives at: loopback and the private LAN.
+fn local_address(url: &str) -> bool {
+    let host = url
+        .split("://")
+        .nth(1)
+        .unwrap_or("")
+        .split('/')
+        .next()
+        .unwrap_or("")
+        .rsplit_once(':')
+        .map(|(h, _)| h)
+        .unwrap_or("");
+    let bare = host.trim_start_matches('[').trim_end_matches(']');
+    bare == "localhost"
+        || bare == "::1"
+        || bare.starts_with("127.")
+        || bare.starts_with("10.")
+        || bare.starts_with("192.168.")
+        || (bare.starts_with("172.") && bare.split('.').nth(1).and_then(|o| o.parse::<u8>().ok()).map(|o| (16..=31).contains(&o)).unwrap_or(false))
+}
+
 async fn sync_get_at(url: &str, path: &str, key: &str) -> Result<serde_json::Value, String> {
+    // Syncthing's web interface certificate is self-signed by design, and Syncthing-Fork ships with HTTPS on, so a
+    // verified chain would reject a correct address forever. Only local addresses get this; anything else must verify.
+    let local = local_address(url);
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(6))
+        .danger_accept_invalid_certs(local)
+        .danger_accept_invalid_hostnames(local)
         .build()
         .map_err(|e| e.to_string())?;
     let full = format!("{}{}", url.trim_end_matches('/'), path);
@@ -267,6 +293,17 @@ mod sync_tests {
             }
         });
         port
+    }
+
+    #[test]
+    fn only_local_addresses_skip_certificate_checks() {
+        assert!(local_address("http://127.0.0.1:8384"));
+        assert!(local_address("https://localhost:8384"));
+        assert!(local_address("https://[::1]:8384"));
+        assert!(local_address("http://192.168.1.20:8384"));
+        assert!(local_address("http://172.16.0.5:8384"));
+        assert!(!local_address("https://example.com"));
+        assert!(!local_address("https://172.40.0.5:8384"));
     }
 
     #[tokio::test]
