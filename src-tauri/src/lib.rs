@@ -17,6 +17,22 @@ struct EntryDto {
     size: u64,
 }
 
+/// The devices' own IPv4 addresses, so the app can also ask Syncthing on the LAN address it may be listening on.
+#[tauri::command]
+fn local_ips() -> Vec<String> {
+    if_addrs::get_if_addrs()
+        .map(|list| {
+            list.into_iter()
+                .filter(|i| !i.is_loopback())
+                .filter_map(|i| match i.addr {
+                    if_addrs::IfAddr::V4(v4) => Some(v4.ip.to_string()),
+                    _ => None,
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// Reads one Syncthing REST endpoint from Rust.
 ///
 /// The app talks to Syncthing's local web interface, which is plain HTTP on a loopback or LAN address. Doing it here
@@ -182,7 +198,8 @@ pub fn run() {
             unwatch_notes,
             set_widget_tasks,
             set_privacy_flags,
-            sync_get
+            sync_get,
+            local_ips
         ]);
 
     // Fingerprint / face unlock exists on phones only.

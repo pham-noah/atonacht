@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Fetcher, probeCandidates, probeUrl } from "../lib/syncthing";
+import { Fetcher, probeCandidates, probeUrl, scanCandidates, scanSyncthing } from "../lib/syncthing";
 
 const fetcher = (behaviour: (url: string) => { status?: number; throw?: string }): Fetcher => async (url) => {
   const b = behaviour(url);
@@ -34,5 +34,24 @@ describe("asking each Syncthing address what it is", () => {
       "https://127.0.0.1:8384",
       "https://localhost:8384",
     ]);
+  });
+});
+
+describe("scanning this device for a listening Syncthing", () => {
+  it("covers loopback, IPv6 and the LAN addresses on both ports", () => {
+    const list = scanCandidates("http://127.0.0.1:8384", ["192.168.1.50"]);
+    expect(list).toContain("http://[::1]:8384");
+    expect(list).toContain("http://192.168.1.50:8384");
+    expect(list).toContain("http://127.0.0.1:8385");
+    expect(new Set(list).size).toBe(list.length); // no duplicates
+  });
+
+  it("keeps only the addresses that answered", async () => {
+    const fetcher: Fetcher = async (url) => {
+      if (url.startsWith("http://192.168.1.50:8384")) return { ok: true, status: 200, json: async () => ({}) };
+      throw new Error("error sending request for url (" + url + ")");
+    };
+    const hits = await scanSyncthing("http://127.0.0.1:8384", ["192.168.1.50"], fetcher);
+    expect(hits.map((h) => h.url)).toEqual(["http://192.168.1.50:8384"]);
   });
 });

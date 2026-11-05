@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveBytes } from "../lib/exportFile";
-import { Fetcher, Probe, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus, probeCandidates, probeUrl } from "../lib/syncthing";
+import { Fetcher, Probe, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus, probeCandidates, probeUrl, scanSyncthing } from "../lib/syncthing";
 import { noteCache } from "../lib/noteCache";
 import { fs, isTauri } from "../lib/backend";
 import { DAILY_TEMPLATE, STARTERS } from "../lib/templates";
@@ -337,6 +337,7 @@ function SyncthingStatus() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [probes, setProbes] = useState<Probe[]>([]);
+  const [scan, setScan] = useState<Probe[] | null>(null);
 
   const check = async () => {
     setBusy(true);
@@ -381,15 +382,53 @@ function SyncthingStatus() {
     }
   };
 
+  const runScan = async () => {
+    setBusy(true);
+    setScan(null);
+    try {
+      const f: Fetcher = await syncthingFetcher();
+      let ips: string[] = [];
+      if (isTauri()) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        ips = (await invoke<string[]>("local_ips").catch(() => [])) ?? [];
+      }
+      setScan(await scanSyncthing(prefs.syncthingUrl, ips, f));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="syncbox">
       {/* A form keeps the password field from being offered to the browser's password manager as a login. */}
       <form className="stack" onSubmit={(e) => { e.preventDefault(); if (!busy && prefs.syncthingKey) void check(); }}>
         <label className="field"><span>Address</span><input className="in mono" value={prefs.syncthingUrl} onChange={(e) => setPrefs({ syncthingUrl: e.target.value })} spellCheck={false} placeholder="http://127.0.0.1:8384" /></label>
         <label className="field"><span>API key</span><input className="in mono" type="password" value={prefs.syncthingKey} onChange={(e) => setPrefs({ syncthingKey: e.target.value })} spellCheck={false} autoComplete="off" placeholder="Paste the key" /></label>
-        <div className="btnrow start"><button className="btn" type="submit" disabled={busy || !prefs.syncthingKey}>{busy ? "Checking…" : "Test connection"}</button></div>
+        <div className="btnrow start">
+          <button className="btn" type="submit" disabled={busy || !prefs.syncthingKey}>{busy ? "Checking…" : "Test connection"}</button>
+          <button className="pill" type="button" onClick={runScan} disabled={busy}>Scan this device</button>
+        </div>
       </form>
       {note && <p className="muted small">{note}</p>}
+      {scan && (
+        <div className="probes">
+          <div className="cap">Syncthing answered at</div>
+          {scan.length === 0 && (
+            <p className="muted small">
+              Nothing answered anywhere on this device: not loopback, not IPv6, not the LAN address, on 8384 or 8385.
+              That means no web interface is listening — open Syncthing-Fork, check that its web GUI is enabled and running,
+              and copy the address it shows.
+            </p>
+          )}
+          {scan.map((p) => (
+            <div key={p.url} className="probe">
+              <span className="mono grow">{p.url}</span>
+              <span className={`chip${p.health === "ok" ? " hi" : ""}`}>{p.health === "ok" ? "Answers" : "HTTPS only"}</span>
+              <button className="pill" onClick={() => setPrefs({ syncthingUrl: p.url })}>Use</button>
+            </div>
+          ))}
+        </div>
+      )}
       {probes.length > 0 && (
         <div className="probes">
           <div className="cap">What answered</div>

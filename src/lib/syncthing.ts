@@ -106,3 +106,22 @@ export function probeCandidates(url: string): string[] {
   }
   return [...new Set(out)];
 }
+
+/**
+ * Everywhere Syncthing could be listening on this device: the usual loopback spellings, IPv6 loopback, and the phone's own
+ * LAN addresses, on the two ports Syncthing and Syncthing-Fork use. A phone that reports "nothing there" for all of these
+ * does not have a web interface listening at all, which is a different problem from a wrong address.
+ */
+export function scanCandidates(typed: string, lanIps: string[]): string[] {
+  const out = [typed.replace(/\/+$/, "")];
+  for (const host of ["127.0.0.1", "localhost", "[::1]", ...lanIps]) {
+    for (const port of [8384, 8385]) out.push(`http://${host}:${port}`);
+  }
+  return [...new Set(out)];
+}
+
+/** Which of those addresses actually answered (health endpoint, no key needed). */
+export async function scanSyncthing(typed: string, lanIps: string[], fetcher: Fetcher): Promise<Probe[]> {
+  const all = await Promise.all(scanCandidates(typed, lanIps).map((u) => probeUrl(u, "", fetcher)));
+  return all.filter((p) => p.health === "ok" || p.health === "tls");
+}
