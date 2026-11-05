@@ -72,7 +72,7 @@ describe("Syncthing status", () => {
     "/rest/config": { devices: [{ deviceID: "ME", name: "Desktop" }, { deviceID: "PHONE123", name: "Pixel 8" }, { deviceID: "OLD99999" }], folders: [{ id: "abc", label: "Atonacht", path: "/home/me/Documents/Atonacht" }] },
     "/rest/system/connections": { connections: { PHONE123: { connected: true } } },
     "/rest/system/status": { myID: "ME" },
-    "/rest/db/status?folder=abc": { state: "syncing", globalBytes: 1000, needBytes: 250 },
+    "/rest/db/status?folder=abc": { state: "syncing", globalBytes: 1000, needBytes: 250, needFiles: 3 },
   };
   const ok: Fetcher = async (url, init) => {
     expect(init?.headers?.["X-API-Key"]).toBe("key");
@@ -81,8 +81,13 @@ describe("Syncthing status", () => {
   };
   it("lists other devices and folder progress", async () => {
     const s = await fetchSyncStatus("http://127.0.0.1:8384/", "key", ok);
-    expect(s.devices).toEqual([{ id: "PHONE123", name: "Pixel 8", connected: true }, { id: "OLD99999", name: "OLD9999", connected: false }]);
-    expect(s.folders).toEqual([{ id: "abc", label: "Atonacht", path: "/home/me/Documents/Atonacht", state: "syncing", completion: 75 }]);
+    expect(s.devices).toEqual([
+      { id: "PHONE123", name: "Pixel 8", connected: true, lastSeen: undefined },
+      { id: "OLD99999", name: "OLD9999", connected: false, lastSeen: undefined },
+    ]);
+    expect(s.folders).toEqual([
+      { id: "abc", label: "Atonacht", path: "/home/me/Documents/Atonacht", state: "syncing", completion: 75, needItems: 3, needBytes: 250 },
+    ]);
   });
   it("explains a wrong API key", async () => {
     const bad: Fetcher = async () => ({ ok: false, status: 403, json: async () => ({}) });

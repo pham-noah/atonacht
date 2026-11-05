@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveBytes } from "../lib/exportFile";
 import { Fetcher, Probe, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus, probeCandidates, probeUrl, scanSyncthing } from "../lib/syncthing";
 import { noteCache } from "../lib/noteCache";
@@ -247,6 +247,18 @@ export function SyncPanel() {
   );
 }
 
+/** "just now" / "3 min ago" for a stamp Syncthing reported, so a stale reading cannot pass for a live one. */
+function shortAgo(iso: string): string {
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return "recently";
+  const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 10) return "just now";
+  if (secs < 90) return `${secs} seconds ago`;
+  const mins = Math.round(secs / 60);
+  if (mins < 90) return `${mins} min ago`;
+  return `${Math.round(mins / 60)} h ago`;
+}
+
 /**
  * Syncthing setup for someone who has never used Syncthing: install -> share the folder -> optional status read-out.
  * The two fields alone are useless unless you already know that Syncthing runs a web interface on port 8384 and hides
@@ -340,12 +352,17 @@ function SyncthingStatus() {
   const [scan, setScan] = useState<Probe[] | null>(null);
   const [ips, setIps] = useState<string[]>([]);
   const [selfTest, setSelfTest] = useState("");
+  const [checkedAt, setCheckedAt] = useState<number | null>(null);
+  const lastCheck = useRef<(() => void) | null>(null);
+  const [, tick] = useState(0);
 
-  const check = async () => {
-    setBusy(true);
-    setErr("");
-    setNote("");
-    setProbes([]);
+  const check = async (silent = false) => {
+    if (!silent) {
+      setBusy(true);
+      setErr("");
+      setNote("");
+      setProbes([]);
+    }
     // In the app this runs in Rust, so there is no plugin scope and no CORS to get wrong; the browser demo uses fetch.
     const f: Fetcher = await syncthingFetcher();
     // 127.0.0.1 and localhost are the same machine but not always the same listener, so try the other spelling before
@@ -358,6 +375,8 @@ function SyncthingStatus() {
       for (const url of tries) {
         try {
           setStatus(await fetchSyncStatus(url, prefs.syncthingKey, f));
+          setCheckedAt(Date.now());
+          setErr("");
           if (url !== prefs.syncthingUrl) {
             setPrefs({ syncthingUrl: url });
             setNote(`Syncthing answered at ${url.replace(/\/+$/, "")} — that address is saved now.`);
@@ -366,11 +385,12 @@ function SyncthingStatus() {
         } catch (e) {
           last = e instanceof Error ? e.message : String(e);
           // a rejected key will be rejected everywhere: no point trying the other spelling
-          if (/rejected the API key|\b401\b|\b403\b/i.test(last)) break;
+          if (/rejected the API key|401|403/i.test(last)) break;
         }
       }
       setStatus(null);
       setErr(describeSyncError(last, prefs.syncthingUrl) + (isTauri() ? "" : " The browser demo cannot reach Syncthing at all."));
+      if (silent) return; // the re-check says it broke; leave the diagnosis to a deliberate Test
       // What answered where: this is the difference between "no Syncthing", "wrong key" and "the GUI speaks HTTPS".
       const seen = await Promise.all(probeCandidates(prefs.syncthingUrl).map((u) => probeUrl(u, prefs.syncthingKey, f)));
       setProbes(seen);
@@ -380,9 +400,18 @@ function SyncthingStatus() {
         setNote(`That address works, so it is saved: ${working.url}`);
       }
     } finally {
-      setBusy(false);
+      if (!silent) setBusy(false);
     }
   };
+
+  lastCheck.current = () => { if (!busy) void check(true); };
+
+  useEffect(() => {
+    if (!status) return;
+    // A status that never changes looks the same whether it is live or stale, so re-read it while the panel is open.
+    const beat = setInterval(() => { lastCheck.current?.(); tick((n) => n + 1); }, 10000);
+    return () => clearInterval(beat);
+  }, [status]);
 
   const runSelfTest = async () => {
     setSelfTest("Running…");
@@ -470,11 +499,30 @@ function SyncthingStatus() {
         <>
           <div className="cap">Devices</div>
           {status.devices.length === 0 && <p className="muted small">No other devices are set up yet.</p>}
-          {status.devices.map((d) => <Row key={d.id} label={d.name}>{d.connected ? <span className="chip hi">Connected</span> : <span className="chip">Offline</span>}</Row>)}
+          {status.devices.map((d) => (
+            <Row key={d.id} label={d.name} hint={d.lastSeen ? `last seen ${shortAgo(d.lastSeen)}` : undefined}>
+              {d.connected ? <span className="chip hi"><i className="dot" />Connected</span> : <span className="chip">Offline</span>}
+            </Row>
+          ))}
           <div className="cap">Folders</div>
           {status.folders.length === 0 && <p className="muted small">Syncthing has no folders yet. Add the notes folder in Syncthing first.</p>}
-          {status.folders.map((f) => <Row key={f.id} label={f.label} hint={f.path}><span className={`chip${f.state === "idle" && f.completion === 100 ? " hi" : ""}`}>{f.state === "idle" && f.completion === 100 ? "Up to date" : `${f.completion}% · ${f.state}`}</span></Row>)}
+          {status.folders.map((f) => {
+            const done = f.needItems === 0 && f.needBytes === 0;
+            return (
+              <Row key={f.id} label={f.label} hint={f.path}>
+                <span className={`chip${done ? " hi" : ""}`}>
+                  {done ? "Up to date" : `${f.needItems} to fetch · ${f.state}`}
+                </span>
+              </Row>
+            );
+          })}
         </>
+      )}
+      {checkedAt && (
+        <p className="muted small">
+          Checked {shortAgo(new Date(checkedAt).toISOString())} · this panel re-checks every 10 seconds while it is open.
+          "Up to date" means nothing is left to fetch, not that the other device is finished sending.
+        </p>
       )}
       <p className="muted small">The key stays on this device and is only sent to the address above.</p>
     </div>

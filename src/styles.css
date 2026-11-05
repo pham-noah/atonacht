@@ -263,6 +263,10 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .scrollrow .pill{flex:0 0 auto}
 .emptyhint{margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}
 
+/* a live indicator: small, steady, obviously not decoration */
+.chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
 /* the diagnostic list under Syncthing's address fields */
 .probes{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--fld)}
 .probe{display:flex;align-items:center;gap:10px;font-size:12.5px}
