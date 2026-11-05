@@ -49,7 +49,17 @@ async fn sync_get_at(url: &str, path: &str, key: &str) -> Result<serde_json::Val
         .header("X-API-Key", key)
         .send()
         .await
-        .map_err(|e| format!("{} ({})", e, full))?;
+        .map_err(|e| {
+            // reqwest's own message is just "error sending request for url (...)": the reason is in the source chain,
+            // and on a phone that reason is the whole answer (refused, permission, no route, TLS).
+            let mut msg = e.to_string();
+            let mut cause = std::error::Error::source(&e);
+            while let Some(c) = cause {
+                msg.push_str(&format!(" -> {}", c));
+                cause = c.source();
+            }
+            format!("{} ({})", msg, full)
+        })?;
     let status = res.status();
     if status.as_u16() == 401 || status.as_u16() == 403 {
         return Err("Syncthing rejected the API key.".into());

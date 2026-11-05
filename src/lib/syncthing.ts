@@ -115,7 +115,7 @@ export function probeCandidates(url: string): string[] {
 export function scanCandidates(typed: string, lanIps: string[]): string[] {
   const out = [typed.replace(/\/+$/, "")];
   for (const host of ["127.0.0.1", "localhost", "[::1]", ...lanIps]) {
-    for (const port of [8384, 8385]) out.push(`http://${host}:${port}`);
+    for (const port of [8384, 8385, 8386, 8387, 8388, 8080]) out.push(`http://${host}:${port}`);
   }
   return [...new Set(out)];
 }
