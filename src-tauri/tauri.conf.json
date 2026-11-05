@@ -12,8 +12,6 @@
   "app": {
     "windows": [
       {
-        "devtools": true
-      {
         "title": "Atonacht",
         "width": 1280,
         "height": 800,
