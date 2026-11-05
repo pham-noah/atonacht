@@ -1,0 +1,420 @@
+*{box-sizing:border-box}
+html,body,#root{height:100%;margin:0}
+body{font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2{margin:0}
+
+/* ---------- themes ---------- */
+.glass{--float:rgba(18,22,52,.86);--bg:radial-gradient(60% 45% at 88% 0%,rgba(91,157,255,.38),transparent 62%),radial-gradient(55% 45% at 0% 100%,rgba(150,120,255,.34),transparent 60%),linear-gradient(160deg,#0F1330,#141A3C 55%,#0B0E22);--side:rgba(255,255,255,.08);--card:rgba(255,255,255,.1);--fld:rgba(255,255,255,.08);--pillb:rgba(255,255,255,.08);--line:rgba(255,255,255,.2);--chip:rgba(255,255,255,.14);--blur:blur(26px) saturate(170%);--sh:inset 0 1px 0 rgba(255,255,255,.3),0 10px 30px rgba(0,0,0,.28);--accT:#06101F;--m:12px;--r:24px;--cr:18px;--muted:#C3C7DD;--txt:#F4F2FA;--tm:16px;--tr:30px;--th:68px;--fsh:0 8px 24px rgba(0,0,0,.35);--hiT:color-mix(in srgb,var(--acc) 55%,white);--warn:#FF9DB8}
+.solid{--float:#0E101A;--bg:#12141F;--side:#0E101A;--card:#1B1E2E;--fld:#12141F;--pillb:transparent;--line:#2A2E44;--chip:#25293F;--blur:none;--sh:none;--accT:#0A1226;--m:0px;--r:0px;--cr:14px;--muted:#A6A9BF;--txt:#ECE9F5;--tm:0px;--tr:0px;--th:76px;--fsh:none;--hiT:color-mix(in srgb,var(--acc) 70%,white);--warn:#FF9DB8}
+.light{--float:rgba(255,255,255,.9);--bg:linear-gradient(160deg,#EAF1FF,#F6F3FF 55%,#E6EEFF);--side:rgba(255,255,255,.62);--card:rgba(255,255,255,.65);--fld:rgba(255,255,255,.72);--pillb:rgba(255,255,255,.6);--line:rgba(30,40,90,.15);--chip:rgba(30,40,90,.08);--blur:blur(26px) saturate(170%);--sh:inset 0 1px 0 rgba(255,255,255,.9),0 10px 30px rgba(40,60,140,.14);--accT:#FFFFFF;--m:12px;--r:24px;--cr:18px;--muted:#4A5070;--txt:#14172B;--tm:16px;--tr:30px;--th:68px;--fsh:0 8px 24px rgba(40,60,140,.3);--hiT:var(--acc);--warn:#B3213F}
+.app{--hiB:color-mix(in srgb,var(--acc) 24%,transparent);display:flex;height:100%;background:var(--bg);color:var(--txt);overflow:hidden}
+.muted{color:var(--muted)}.small{font-size:13px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.grow{flex:1;min-width:0}
+.accenttext{color:var(--hiT)}.errtext{color:var(--warn);font-size:13px;margin:0}
+
+/* ---------- surfaces ---------- */
+.glassy,.card,.side,.tabs,.sheet,.toolbar,.fold,.banner,.themecard,.d{background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.card{padding:16px;border-radius:var(--cr)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.cap{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:16px 0 6px}
+.cap:first-child{padding-top:2px}
+.h2{font:500 22px Fraunces,Georgia,serif}
+.ttl{font:500 36px Fraunces,Georgia,serif}
+/* the month is a label, not a headline: it must not wrap onto two lines and take the whole screen */
+.calttl{font-size:26px;white-space:nowrap;letter-spacing:-0.01em}
+.legend{font-size:11.5px;letter-spacing:.01em;opacity:.75}
+.dayttl{font-size:20px;line-height:1.25}
+@media (max-width:899px){
+  .calttl{font-size:22px}
+  .legend{display:none} /* the dots explain themselves once you have seen them */
+}
+.pagehead{display:flex;align-items:flex-end;gap:12px}.pagehead>div:first-child{flex:1}
+.rowhead{display:flex;align-items:center;gap:10px}
+.chip{font-size:11.5px;padding:1px 8px;border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip.hi{background:var(--hiB);color:var(--hiT);border-color:transparent;font-weight:600}
+.chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 55%,transparent)}
+.chipbtn{min-height:26px;max-width:140px;overflow:hidden;text-overflow:ellipsis;background:var(--chip);border-color:transparent;color:var(--txt)}
+.chipbtn:hover{background:color-mix(in srgb,var(--acc) 22%,var(--chip))}
+.btn,.pill{height:36px;padding:0 16px;border-radius:999px;border:1px solid transparent;font-weight:600;font-size:14px}
+.btn{background:var(--acc);color:var(--accT)}.btn:disabled{opacity:.5}
+.btn.big{height:52px;width:100%;font-size:16px}
+.pill{border-color:var(--line);background:var(--pillb);color:var(--txt);font-weight:500}.pill.on{background:var(--acc);color:var(--accT);border-color:var(--acc);font-weight:600}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.btnrow.start{justify-content:flex-start}
+.ib{width:44px;height:44px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--txt);display:flex;align-items:center;justify-content:center}
+.in{width:100%;min-height:44px;border-radius:14px;border:1px solid var(--line);background:var(--fld);color:var(--txt);padding:0 14px;font:inherit}
+.in:focus-visible,button:focus-visible,.page:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.addrow{display:flex;gap:8px;align-items:center;background:var(--fld);border:1px solid var(--line);border-radius:999px;padding:4px 4px 4px 16px}
+.addrow .in:focus,.addrow .in:focus-visible{outline:none} /* the caret is the focus signal here */
+.addrow .in{background:transparent;border:0;flex:1;min-width:0;padding:8px 0;height:auto}
+.addrow .btn{height:40px;padding:0 18px;border-radius:999px}
+.link{background:none;border:0;text-align:left;padding:0;color:var(--txt)}.link.done{text-decoration:line-through;color:var(--muted)}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid var(--line);background:var(--fld);display:inline-grid;place-items:center;cursor:pointer;transition:background .16s ease,border-color .16s ease,transform .12s ease}
+input[type=checkbox]:hover{border-color:var(--acc)}
+input[type=checkbox]:active{transform:scale(.9)}
+input[type=checkbox]:checked{background:var(--acc);border-color:var(--acc)}
+input[type=checkbox]:checked::after{content:"";width:11px;height:6px;margin-top:-2px;border-left:2.2px solid var(--accT);border-bottom:2.2px solid var(--accT);transform:rotate(-45deg);animation:tick .18s cubic-bezier(.2,.8,.2,1)}
+input[type=radio]{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:none;border-radius:50%;border:1.5px solid var(--line);background:var(--fld);display:inline-grid;place-items:center}
+input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var(--acc)}
+@keyframes tick{from{transform:rotate(-45deg) scale(.3);opacity:0}to{transform:rotate(-45deg) scale(1);opacity:1}}
+.row{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid var(--line);flex-wrap:wrap;padding:4px 0}
+/* A row owns horizontal drags (swipe to complete / tomorrow / delete) and leaves vertical scrolling to the page.
+   Without this the WebView cancels the pointer as soon as the finger moves sideways, and no swipe ever fires. */
+.row,.row *{touch-action:pan-y}
+.row{position:relative;overflow:hidden}
+.rowin{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1 1 auto;min-width:0;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.row.swiping .rowin{transition:none}
+
+/* the revealed panel: tint and border grow with the distance, the icon grows, and the label appears once the gesture
+   would actually do something (--p is the fraction of the travel cap) */
+.swipepanel{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:8px;padding:0 14px;pointer-events:none;
+  background:color-mix(in srgb,var(--acc) calc(var(--p,0) * 26%),transparent);
+  border:2px solid color-mix(in srgb,var(--acc) calc(var(--p,0) * 100%),transparent);
+  border-radius:14px;color:var(--acc);opacity:1}
+.swipepanel.right{left:0;justify-content:flex-start}
+.swipepanel.left{right:0;justify-content:flex-end}
+.swipepanel.danger{color:var(--warn);background:color-mix(in srgb,var(--warn) calc(var(--p,0) * 24%),transparent);border-color:color-mix(in srgb,var(--warn) calc(var(--p,0) * 100%),transparent)}
+.swipeicon{display:grid;place-items:center;transform:scale(calc(.55 + var(--p,0) * .45));transition:transform .08s linear}
+.swipepanel.armed .swipeicon{transform:scale(1.08)}
+.swipelabel{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;animation:fadeIn .1s ease-out}
+@media (prefers-reduced-motion:reduce){.rowin{transition:none}.swipeicon{transition:none}}
+.kcard,.kcard *{touch-action:pan-y}
+.row:last-child{border-bottom:0}
+.bar{display:flex;align-items:center;gap:8px;min-height:48px}
+.banner{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--cr);color:var(--txt);text-align:left;width:100%}
+.warnb{border-color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.fold{display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding:14px;border-radius:var(--cr);color:var(--txt);text-align:left}
+.fold svg{color:var(--hiT)}.fname{font-weight:500}
+.fold.new{border-style:dashed;background:none;box-shadow:none;backdrop-filter:none;color:var(--muted);align-items:center;justify-content:center;min-height:44px;flex-direction:row}
+.list{padding:4px 16px}
+.noterow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:12px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--txt)}
+.noterow:last-child{border:0}.nt{font-weight:500}.meta{display:flex;gap:8px;align-items:center}
+
+/* ---------- layout ---------- */
+.side{width:248px;flex:none;margin:var(--m);border-radius:var(--r);padding:20px 14px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+.sidehead{display:flex;align-items:center;gap:10px}
+.brandname{font:600 22px Fraunces,Georgia,serif}
+.nav{display:flex;flex-direction:column;gap:2px}
+.navitem{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 10px;border-radius:12px;border:0;background:none;color:var(--muted);text-align:left}
+.navitem.on{background:var(--chip);color:var(--txt)}
+.syncline{margin-top:auto;display:flex;gap:8px;align-items:center;padding:0 6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#6FE3B0}.dot.bad{background:var(--warn)}
+.main{flex:1;min-width:0;overflow:auto;display:flex;flex-direction:column;padding:max(20px,env(safe-area-inset-top)) 20px calc(var(--th) + var(--tm) + 36px);gap:14px}
+.content{display:flex;flex-direction:column;gap:14px;width:100%;max-width:880px}
+.wide .main{padding:36px 40px;align-items:flex-start}
+.wide .tabs,.wide .fab,.wide .brandbtn,.wide .drawerscrim{display:none}
+.brandbtn{display:flex;align-items:center;gap:10px;background:none;border:0;min-height:44px;color:var(--txt);padding:0;align-self:flex-start}
+.brandbtn .brandname{font-size:20px}
+@media (max-width:899px){
+  .side{position:fixed;left:0;top:0;bottom:0;margin:12px;z-index:30;width:min(310px,calc(100% - 24px));transform:translateX(-120%);transition:transform .22s ease}
+  .side.open{transform:none}.solid .side{margin:0;width:min(310px,100%);height:100%}
+  .drawerscrim{position:fixed;inset:0;background:rgba(5,7,20,.5);z-index:20}
+}
+.tabs{background:var(--float);position:fixed;left:0;right:0;bottom:0;height:var(--th);margin:0 var(--tm) calc(var(--tm) + env(safe-area-inset-bottom));border-radius:var(--tr);display:flex;z-index:10}
+.solid .tabs{margin:0;padding-bottom:env(safe-area-inset-bottom);height:calc(var(--th) + env(safe-area-inset-bottom))}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;color:var(--muted);font-size:12px}
+.tabs button.on{color:var(--hiT)}
+.fab{position:fixed;right:20px;bottom:calc(var(--th) + var(--tm) + 28px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:19px;border:1px solid rgba(255,255,255,.16);background:var(--acc);color:var(--accT);box-shadow:var(--fsh);display:flex;align-items:center;justify-content:center;z-index:11}
+.app:not(.wide) .content{padding-bottom:96px} /* room for the + so it never covers the last card */
+.scrim{position:fixed;inset:0;background:rgba(5,7,20,.5);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:min(520px,calc(100% - 16px));margin:8px;border-radius:32px;padding:10px 18px 20px;display:flex;flex-direction:column;gap:12px;max-height:92%;overflow:auto;background:var(--side);overscroll-behavior:contain}
+.sheetbody{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;overscroll-behavior:contain}
+.sheetfoot{flex:none;padding-top:10px;border-top:1px solid var(--line);background:var(--side)}
+.sheetfoot .btnrow{margin:0}
+@media (max-height:520px){.sheetbody{max-height:60vh}}
+.titlein{font-size:17px;font-weight:600;min-height:46px}
+/* renaming happens in the row itself: same height as the title line, so nothing jumps */
+.rowrename{height:34px;min-height:34px;padding:0 10px;border-radius:10px;font-size:15px}
+.plainhint{font-size:11px;line-height:1.45;opacity:.72}
+@media (max-width:899px){
+  /* the sheet takes the width, sits on the keyboard's edge, and can never be taller than what is left of the screen */
+  .sheet{width:100%;margin:0;border-radius:26px 26px 0 0;padding:8px 16px calc(14px + env(safe-area-inset-bottom));max-height:calc(100dvh - var(--kb,0px) - 10px);min-height:0}
+  .sheet .h2{font-size:19px}
+  .sheet .field{gap:4px}
+  .sheet .field .in{min-height:44px}
+  .sheet .plainhint{display:none} /* a footnote about markdown is not what you need while typing a task */
+}
+.wide .scrim{align-items:center}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center}
+
+/* ---------- calendar ---------- */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:100%}
+.cal b{font-size:12px;color:var(--muted);text-align:center;font-weight:500}
+.d{position:relative;display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;color:var(--txt);box-shadow:none;backdrop-filter:none}
+.wide .d{height:72px}
+.d.n::after,.d.o::after{content:"";position:absolute;bottom:7px;width:5px;height:5px;border-radius:50%;background:var(--muted)}.d.o::after{background:var(--acc)}
+.d.on{background:var(--acc);color:var(--accT);font-weight:600;border-color:var(--acc)}.d.on::after{background:var(--accT)}
+
+/* ---------- editor ---------- */
+.editor{display:flex;flex-direction:column;gap:10px;min-height:calc(100dvh - 60px);position:relative;width:100%}
+.page{width:100%;flex:1;min-height:50vh;border:0;background:transparent;color:var(--txt);font:16px/1.7 Inter,system-ui,sans-serif;resize:none;padding:0 0 90px}
+.page:focus{outline:none}
+.preview h1,.preview h2,.preview h3{font:500 24px Fraunces,Georgia,serif;margin:16px 0 6px}
+.preview p{margin:6px 0}.preview a.wl{color:var(--hiT);cursor:pointer}
+.preview code,.preview pre{font-family:ui-monospace,monospace;background:var(--chip);border-radius:6px;padding:0 4px}
+.md-task{display:flex;gap:10px;align-items:center;min-height:36px}.md-task.done span{color:var(--muted);text-decoration:line-through}
+.md-li{padding:2px 0}
+.preview .pblock{display:contents}
+.preview .lineedit{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.preview .lineedit textarea{width:100%;box-sizing:border-box;font:inherit;color:var(--txt);background:var(--fld);border:1px solid var(--acc);border-radius:var(--cr,10px);padding:6px 10px;resize:vertical;min-height:36px;outline:none}
+.toolbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));display:flex;gap:2px;padding:6px;border-radius:999px;z-index:12;background:var(--side)}
+.toolbar button{min-width:44px;height:44px;border-radius:999px;border:0;background:none;color:var(--txt);font-weight:600;display:flex;align-items:center;justify-content:center}
+.status{position:fixed;left:20px;bottom:calc(32px + env(safe-area-inset-bottom))}.wide .status{left:300px}
+
+/* ---------- settings, conflicts, first run ---------- */
+.themes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.themes{grid-auto-rows:1fr}
+.themecard.picked{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.themecard .muted.small{font-size:11.5px;line-height:1.35}
+@media (max-width:520px){
+  .themes{grid-template-columns:repeat(3,1fr);gap:8px}
+  .themecard{padding:8px;gap:6px}
+  .themecard .mini{height:40px}
+  .themecard .tn{font-size:12.5px;gap:6px}
+  .themecard .muted.small{font-size:10.5px}
+}
+.themecard{display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:20px;border-width:2px}.themecard.sel{border-color:var(--acc)}
+.tn{display:flex;gap:8px;align-items:center;font-weight:500}
+.mini{height:84px;border-radius:12px;position:relative;overflow:hidden;display:block}.mini span{position:absolute;inset:14px;border-radius:10px;display:block}
+.mini-glass{background:linear-gradient(160deg,#0F1330,#2F4A94)}.mini-glass span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35)}
+.mini-solid{background:#12141F}.mini-solid span{background:#1B1E2E;border:1px solid #2A2E44}
+.mini-light{background:linear-gradient(160deg,#EAF1FF,#C9D8FF)}.mini-light span{background:rgba(255,255,255,.8);border:1px solid rgba(30,40,90,.15)}
+.srow{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 0;flex-wrap:wrap}
+/* the label keeps a readable column; a control that does not fit drops to the next line instead of squeezing it */
+.srow .grow{flex:1 1 auto;min-width:min(100%,11.5em)}
+.srow>.pills,.srow>.btn,.srow>.pill,.srow>.ib,.srow>input:not(.in),.srow>select,.srow>.chip,.srow>.timein,.srow>.movebtns{flex:0 0 auto;margin-left:auto}
+/* a row ending in one small round button keeps its label on one line */
+.srow>.grow:has(~.ib){min-width:0}
+/* a row whose control is one round button keeps that button on the first line, even when the label wraps */
+.srow:has(>.ib){flex-wrap:nowrap;align-items:flex-start}
+.srow:has(>.ib)>.ib,.srow:has(>.ib)>.chip,.srow:has(>.ib)>.pill{margin-top:2px}
+.srow>.pills{margin-left:auto}
+@media (max-width:520px){
+  .srow>.pills,.srow>input[type=range],.srow>.timein{flex:1 1 100%;width:100%;margin:8px 0 0}
+  .srow>input[type=range]{height:28px}
+  .srow>.pills .pill{flex:1 1 auto;justify-content:center}
+}
+/* rows need a hairline, otherwise four settings read as one paragraph */
+.card>.srow+.srow,.card>form+.srow,.card>.srow+form{border-top:1px solid var(--line)}
+.swatches{display:flex;gap:12px}.sw{width:32px;height:32px;border-radius:50%;border:0}.sw.sel{outline:2px solid var(--txt);outline-offset:3px}
+.diffs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:899px){.diffs{grid-template-columns:1fr}}
+.diffcol{display:flex;flex-direction:column;gap:2px;min-width:0}
+.dl{display:flex;gap:8px;padding:3px 8px;border-radius:8px;line-height:1.5;font-size:14px;overflow-wrap:anywhere}.dl>span:first-child{width:12px;flex:none}
+.dl.same{color:var(--muted)}.dl.add{background:var(--hiB)}.dl.del{background:color-mix(in srgb,var(--warn) 22%,transparent)}
+.firstrun{margin:auto;width:min(420px,100%);padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.firstrun .brandname{font-size:44px;line-height:1}.tag{font:italic 20px Fraunces,Georgia,serif;color:var(--muted)}
+.lead{max-width:300px;line-height:1.6;margin:6px 0}.field.wide{width:100%;text-align:left}
+@media (prefers-reduced-transparency:reduce){.glass{--blur:none;--card:rgba(30,34,64,.96);--side:rgba(22,26,52,.98)}}
+
+.steps{display:flex;gap:6px}.steps span{flex:1;height:5px;border-radius:3px;background:var(--line)}.steps span.on{background:var(--acc)}
+.reviewrow{border-bottom:1px solid var(--line);padding-bottom:10px;display:flex;flex-direction:column;gap:4px}.reviewrow:last-child{border:0}
+
+.glass.flat{--blur:none;--card:#1F2447;--side:#171B3A;--fld:#171B3A;--pillb:#1F2447;--chip:#2A3060}
+.light.flat{--blur:none;--card:#FFFFFF;--side:#F4F7FF;--fld:#FFFFFF;--pillb:#FFFFFF}
+input[type=range]{accent-color:var(--acc);width:150px}
+
+/* ---------- live editor ---------- */
+.page{font-family:var(--ed-font,Inter,system-ui,sans-serif);font-size:var(--ed-size,16px);line-height:var(--ed-lh,1.7)}
+.live .cm-editor{background:transparent;color:var(--txt);outline:none}.live .cm-editor.cm-focused{outline:none}
+.live .cm-content{font-family:inherit;caret-color:var(--acc);padding:0 0 90px}.live .cm-line{padding:0 2px}
+.live .cm-cursor{border-left-color:var(--acc)}.live .cm-selectionBackground,.live .cm-editor.cm-focused .cm-selectionBackground{background:color-mix(in srgb,var(--acc) 35%,transparent)}
+.cm-h{font-family:Fraunces,Georgia,serif;font-weight:500;line-height:1.3;padding-top:.4em}.cm-h1{font-size:1.6em}.cm-h2{font-size:1.35em}.cm-h3{font-size:1.15em}
+.cm-fm{color:var(--muted);font-size:.85em;font-family:ui-monospace,monospace}
+.cm-mark{color:var(--muted)}
+.cm-box{cursor:pointer;color:var(--acc);font-family:ui-monospace,monospace;padding:0 2px;border-radius:4px}
+.cm-box:hover{background:var(--chip)}.cm-boxdone{color:var(--muted)}
+.cm-taskdone{color:var(--muted)}.cm-taskdone .cm-chip{opacity:.7}
+.cm-chip{font-size:.8em;padding:1px 7px;border-radius:999px;background:var(--chip)}.cm-hi{background:var(--hiB);color:var(--hiT)}
+.cm-dim{color:var(--muted);font-size:.8em}.cm-wl{color:var(--hiT)}.cm-strong{font-weight:700}
+.cm-code,.cm-fence{font-family:ui-monospace,monospace;background:var(--chip);border-radius:4px}
+
+.compact .row{min-height:38px}.compact .navitem{min-height:34px}.compact .noterow{padding:8px 0}.compact .card{padding:12px}
+
+.filepick{display:block}
+.filepick input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.filepick .pill{display:inline-flex;align-items:center;height:38px}
+.movebtns{display:inline-flex;gap:4px;margin-left:auto}
+.movebtns .ib{width:34px;height:34px;border-radius:12px;border:1px solid var(--line);background:var(--fld);font-size:12px;display:grid;place-items:center}
+.movebtns .ib:disabled{opacity:.45}
+
+/* the undo bar after a swipe deletes something */
+.snack{position:fixed;left:12px;right:12px;bottom:calc(var(--th) + var(--tm) + 12px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:var(--float);border:1px solid var(--line);box-shadow:var(--sh);z-index:30;animation:sheetUp .2s cubic-bezier(.2,.8,.2,1)}
+.snack .grow{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wide .snack{left:auto;right:24px;bottom:24px;max-width:420px}
+
+/* ---------- guided setup (Syncthing) ---------- */
+.step{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0;padding-top:4px}
+.stepn{flex:none;width:26px;height:26px;border-radius:50%;background:var(--acc);color:var(--accT);display:grid;place-items:center;font-size:13px;font-weight:700;margin-top:1px}
+.step b{font-size:15px}
+.step p{margin:4px 0 0}
+.step .btnrow{margin-top:8px}
+.howto{margin-top:8px;border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.howto summary{cursor:pointer;font-size:13px;color:var(--acc);padding:2px 0}
+.howto p{margin:8px 0 2px}
+.syncbox{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--fld)}
+
+/* ---------- boot ---------- */
+.boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg)}
+.boot svg{opacity:.9;animation:bootPulse 1.1s ease-in-out infinite alternate}
+@keyframes bootPulse{from{opacity:.55;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.app{animation:appIn .22s ease-out}
+@keyframes appIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.boot svg,.app{animation:none}}
+
+/* ---------- scrollbars ---------- */
+*{scrollbar-width:thin;scrollbar-color:rgba(160,170,220,.35) transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-thumb{background:rgba(160,170,220,.32);border-radius:999px;border:3px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:rgba(170,180,230,.5);background-clip:content-box}
+*::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- motion ---------- */
+/* Everything here is small and quick on purpose: a tap should feel answered, not animated at. */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes slideFromRight{from{opacity:.55;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes slideFromLeft{from{opacity:.55;transform:translateX(-16px)}to{opacity:1;transform:none}}
+.btn,.pill,.ib,.fab,.navitem,.noterow,.setitem,.d,.themeCard,.kcard,.tab,.tabs button{transition:transform .12s cubic-bezier(.2,.8,.2,1),background-color .12s ease,opacity .12s ease}
+.btn:active,.pill:active,.ib:active,.fab:active,.d:active,.tabs button:active{transform:scale(.96)}
+.navitem:active,.setitem:active,.noterow:active,.kcard:active{transform:scale(.99)}
+.btn:disabled:active,.pill:disabled:active{transform:none}
+.fab:active{transform:scale(.92)}
+.scrim{animation:fadeIn .16s ease-out}
+.sheet{animation:sheetUp .22s cubic-bezier(.2,.8,.2,1)}
+.content.slide-r{animation:slideFromRight .2s cubic-bezier(.2,.8,.2,1)}
+.content.slide-l{animation:slideFromLeft .2s cubic-bezier(.2,.8,.2,1)}
+.tabs button.on svg{transform:translateY(-1px);transition:transform .16s ease}
+@media (prefers-reduced-motion: reduce){
+  .btn,.pill,.ib,.fab,.navitem,.noterow,.setitem,.d,.themeCard,.kcard,.tabs button{transition:none}
+  .scrim,.sheet,.content.slide-r,.content.slide-l,.tabs button.on svg{animation:none;transform:none}
+}
+
+/* ---------- touch ---------- */
+*{-webkit-tap-highlight-color:transparent}
+button,a,label,input,select,textarea,[role=button],.noterow,.navitem,.d,.kcard{touch-action:manipulation}
+button,[role=button],.pill,.noterow,.navitem,.setitem{-webkit-user-select:none;user-select:none}
+/* the bottom bar and the + button step aside while the keyboard is up, instead of riding on top of it */
+.app.kb .tabs,.app.kb .fab,.app.kb .toolbar{display:none}
+/* a dialog opens above the keyboard: only the sheet moves, the page behind stays exactly where it was */
+.app.kb .scrim{padding-bottom:var(--kb,0px)}
+.kbody{display:flex;flex-direction:column;gap:8px;min-width:0}
+/* the board bar: tags on the left, sort on the right, one row */
+.boardbar{justify-content:flex-start;align-items:center;gap:8px}
+.boardbar .movesel{margin-left:auto;display:flex;gap:8px;align-items:center}
+.boardbar select{height:36px;border-radius:999px;border:1px solid var(--line);background:var(--fld);color:var(--txt);padding:0 10px;font-size:13px}
+@media (max-width:899px){.boardbar .movesel span{display:none}.boardbar select{max-width:44vw}}
+/* a card peeking in from the next column fades out instead of showing a chopped word (mask, so the controls
+   above the board are untouched) */
+@media (max-width:899px){
+  .board{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
+}
+
+/* ---------- settings ---------- */
+.block{display:block}.srow.wrap{flex-wrap:wrap}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.licences{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:2px}
+.checklines{list-style:none;margin:4px 0 8px;padding:0;display:flex;flex-direction:column;gap:4px;font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)}
+.checklines li{word-break:break-word}
+.licences li{display:flex;gap:12px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
+.setgrid{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start;width:100%}
+.setlist{display:flex;flex-direction:column;gap:6px}
+.setitem{display:flex;align-items:center;gap:10px;text-align:left;padding:12px 14px;border-radius:var(--cr);border:1px solid var(--line);background:var(--card);box-shadow:var(--sh);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);color:var(--txt)}
+.setitem.on{border-color:var(--acc)}
+.setpanel{min-width:0}
+.timein{width:auto;min-height:40px}
+.sel{height:36px;border-radius:10px;border:1px solid var(--line);background:var(--fld);color:var(--txt);padding:0 12px;font:inherit}
+
+.chosen{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 16px}
+
+.lockscreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px}
+.lockscreen .btn{max-width:320px}
+.scrim.top{align-items:flex-start;padding-top:12vh}
+.palette{width:min(560px,calc(100% - 16px));border-radius:24px;padding:12px}
+.palette .navitem{width:100%}
+
+.banner .grow{flex:1 1 200px}.banner{flex-wrap:wrap}
+/* a prompt, not a headline: same font as the rest, tighter padding, buttons on the text line */
+.banner.quiet{padding:10px 12px;gap:8px 6px;flex-wrap:nowrap;align-items:center;font-size:14px;color:var(--muted)}
+@media (max-width:520px){.banner.quiet{flex-wrap:wrap}.banner.quiet .grow{flex:1 1 100%}}
+.banner.quiet .grow{flex:1 1 auto;min-width:0}
+.banner.quiet .pill{white-space:nowrap;flex:none}
+.banner.quiet .pill{height:32px;padding:0 12px;font-size:13px}
+@media (max-width:420px){.banner.quiet .grow{font-size:13px}}
+.banner.quiet .pill.on{background:var(--acc);color:var(--accT);border-color:transparent}
+
+/* Floating surfaces sit over scrolling text, so they get a more solid tint than ordinary cards. */
+.tabs,.toolbar,.sheet{background:var(--float)}
+@media (max-width:899px){.side{background:var(--float)}}
+.glass.flat,.light.flat{--float:var(--side)}
+
+/* ---------- phone: roomier task rows and top bar ---------- */
+.taskmeta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row .link{text-align:left}
+@media (max-width:899px){
+  /* checkbox and title on one line, the chips on the next line under the text - the fixed calc() basis used to push
+     the title onto its own line as soon as the checkbox grew a border. */
+  .row{row-gap:0;align-items:flex-start}
+  /* the 22px box and the first line of the title share one line box, so they sit on the same baseline */
+  .row .link{line-height:22px}
+  .row input[type=checkbox]{margin-top:0}
+  .row .link{flex:1 1 auto;min-width:0}
+  .taskmeta{flex:1 1 100%;margin-left:34px;padding:2px 0 8px}
+}
+.bar{gap:8px}.bar .grow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:899px){
+  .bar .pill{height:34px;padding:0 12px;font-size:13px}
+  .bar .ib{width:38px;height:38px}
+  .bar .pill.mode{gap:6px;display:inline-flex;align-items:center}
+  .bar .pill.mode .modelabel{display:none} /* the eye says it: "Preview" would eat the note's title */
+}
+@media (max-width:899px){.status.saved{display:none}}
+
+/* ---------- board ---------- */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.content.full{max-width:none}
+.board{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;width:100%}
+.kcol{flex:0 0 84%;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:var(--cr);background:var(--panelbg,var(--side));border:1px solid var(--line);min-height:120px}
+.kcol.over{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.khead{display:flex;align-items:center;gap:8px;padding:0 2px 4px}
+.kcard{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);cursor:grab}
+.kcard.done .ktitle{text-decoration:line-through;color:var(--muted)}
+.ktitle{line-height:1.35;font-weight:500}
+.movesel select{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--fld);color:var(--txt);padding:0 8px;font:inherit;font-size:13px;max-width:100%}
+.kempty{padding:6px 2px}
+@media (min-width:900px){.kcol{flex:1 1 0;min-width:240px}}
+@media (max-width:899px){.kcard .taskmeta{margin-left:0;flex-basis:auto;padding-bottom:0}}
+
+.kdrop{height:4px;border-radius:2px;background:var(--acc);margin:2px 0 6px}
+.kctl{display:flex;gap:6px;align-items:center}.kbtn{height:34px;width:38px;padding:0}.kbtn:disabled{opacity:.35}
+.kadd{flex:0 0 84%;gap:10px;background:none;border-style:dashed}
+@media (min-width:900px){.kadd{flex:0 0 220px}}
+/* A visually hidden label is absolutely positioned; without a positioned parent it escapes the board's sideways scroll and widens the page. */
+.board,.movesel{position:relative}
+
+/* ---------- dragging cards ---------- */
+.kcard{touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.kcard.dragging{opacity:.35}
+.kcard:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.kghost{position:fixed;left:0;top:0;z-index:90;pointer-events:none;margin:0;box-shadow:0 18px 40px rgba(0,0,0,.45);background:var(--float);transform-origin:20% 30%;cursor:grabbing}
+.kdhint{margin:0}
+body:has(.kghost){cursor:grabbing}
+/* While a card is carried the board must scroll freely; mandatory snapping would pull it back every frame. */
+.app:has(.kghost) .board{scroll-snap-type:none}
+
+/* phone board, after the base rules so it actually wins: columns stack, their cards scroll sideways */
+@media (max-width:899px){
+  .kdhint{display:none}
+  /* To do / Doing / Done stack down the page; each column's cards scroll sideways, so you read one column at a time */
+  .board{flex-direction:column;gap:14px;overflow:visible}
+  .kcol{flex:0 0 auto;width:100%}
+  .kbody{flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:10px;padding:2px 0 10px;scroll-snap-type:x mandatory;mask-image:linear-gradient(90deg,#000 92%,transparent)}
+  .kcol>.pill{align-self:flex-start;margin-top:2px}
+  .kbody>.kcardwrap{flex:0 0 78%;scroll-snap-align:start}
+  .kbody>.kcardwrap .kcard{height:100%}
+  .kbody .kdrop{display:none}
+  .kadd{flex:0 0 auto;width:100%}
+}

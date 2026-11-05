@@ -1,0 +1,13 @@
+Atonacht keeps your daily notes and to-dos as plain Markdown files in a folder you choose. There is no account and no server: sync them between your phone and computer with Syncthing.
+
+<b>What you get</b>
+• Today's note, created for you each day, with yesterday's unfinished tasks offered for carry-over
+• One list of every to-do from every note. Check a task off and the note itself is updated
+• Due dates, priorities, tags and repeating tasks, written as plain text in your notes
+• A live Markdown editor with checkboxes, [[links]] and a command palette on desktop
+• Folders, pinned notes, templates, search and a calendar
+• A weekly review, reminders, a home screen quick-add widget and share-sheet capture
+• Sync conflicts shown as a clear comparison, never silently overwritten
+• Liquid Glass, Solid and Light themes
+
+Your notes stay yours: open them in any text editor, back them up as a ZIP, or stop using Atonacht at any time.

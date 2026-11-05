@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/capture_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="20dp"
+    android:paddingEnd="8dp">
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Add a task or note"
+        android:textColor="#F4F2FA"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="@drawable/widget_plus_bg"
+        android:contentDescription="Add"
+        android:gravity="center"
+        android:text="+"
+        android:textColor="#06101F"
+        android:textSize="26sp" />
+</LinearLayout>

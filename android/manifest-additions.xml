@@ -1,0 +1,19 @@
+<!-- Inserted inside <application>. Each component is added only if it is not already there. -->
+<receiver android:name=".QuickCaptureWidget" android:exported="false">
+    <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+    <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_capture_widget_info" />
+</receiver>
+<receiver android:name=".TaskListWidget" android:exported="false">
+    <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+    <meta-data android:name="android.appwidget.provider" android:resource="@xml/task_list_widget_info" />
+</receiver>
+<service android:name=".TaskListService" android:exported="false" android:permission="android.permission.BIND_REMOTEVIEWS" />
+<provider android:name=".AtonachtInit" android:authorities="${applicationId}.atonacht-init" android:exported="false" android:initOrder="100" />
+<activity android:name=".ShareReceiverActivity" android:exported="true" android:label="Add to Atonacht"
+    android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true">
+    <intent-filter>
+        <action android:name="android.intent.action.SEND" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="text/plain" />
+    </intent-filter>
+</activity>

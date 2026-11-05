@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Atonacht</title>
+    <style>
+      /* painted before the bundle loads, in the colour the app is about to use, so the first frame is never white */
+      html { background: #0F1330; color-scheme: dark; }
+      html.light { background: #EAF1FF; color-scheme: light; }
+      html, body, #root { height: 100%; margin: 0; }
+    </style>
+    <script>
+      // read the saved theme before anything renders: a light-theme reader should not get a dark flash either
+      try {
+        var p = JSON.parse(localStorage.getItem("atonacht.prefs") || "{}");
+        if (p.theme === "light") document.documentElement.classList.add("light");
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

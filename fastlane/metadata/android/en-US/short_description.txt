@@ -1,0 +1,1 @@
+Daily notes and to-dos as plain Markdown files, synced with Syncthing

@@ -1,0 +1,32 @@
+[package]
+name = "atonacht"
+version = "0.1.0"
+description = "Daily notes and to-dos as plain Markdown files"
+edition = "2021"
+
+[lib]
+name = "atonacht_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-notification = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-android-fs = "=30.2.0"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-http = "2"
+tauri-plugin-opener = "2"
+notify = "8"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+ndk-context = "0.1"
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-biometric = "2"
