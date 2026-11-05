@@ -245,7 +245,7 @@ export function SyncPanel() {
         <Choice
           label="This device syncs with"
           value={prefs.syncMethod}
-          options={[["syncthing", "Syncthing"], ["github", "GitHub"], ["both", "Both"], ["none", "Not now"]]}
+          options={[["syncthing", "Syncthing"], ["github", "GitHub"], ["both", "Both"], ["none", "Off"]]}
           onChange={(v) => setPrefs({ syncMethod: v })}
         />
         <p className="muted small">
