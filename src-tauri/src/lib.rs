@@ -60,6 +60,29 @@ async fn sync_get_at(url: &str, path: &str, key: &str) -> Result<serde_json::Val
     res.json::<serde_json::Value>().await.map_err(|e| format!("Syncthing sent something unreadable: {}", e))
 }
 
+/// Opens a one-request listener on this app's own loopback and fetches it through the same path Syncthing uses.
+///
+/// This answers one question that nothing else can: can the HTTP client inside this app talk to 127.0.0.1 at all? If
+/// this succeeds and Syncthing still does not answer, the problem is not the app's networking.
+#[tauri::command]
+async fn sync_selftest() -> Result<String, String> {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").map_err(|e| format!("could not listen on loopback: {}", e))?;
+    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+    std::thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let mut buf = [0u8; 1024];
+            let _ = stream.read(&mut buf);
+            let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 11\r\n\r\n{\"ok\":true}");
+        }
+    });
+    match sync_get_at(&format!("http://127.0.0.1:{}", port), "/selftest", "").await {
+        Ok(v) if v["ok"] == serde_json::json!(true) => Ok(format!("this app reached its own loopback port {}", port)),
+        Ok(_) => Err(format!("port {} answered something unexpected", port)),
+        Err(e) => Err(format!("this app could not reach its own loopback port {}: {}", port, e)),
+    }
+}
+
 #[tauri::command]
 async fn sync_get(url: String, path: String, key: String) -> Result<serde_json::Value, String> {
     sync_get_at(&url, &path, &key).await
@@ -203,7 +226,8 @@ pub fn run() {
             set_widget_tasks,
             set_privacy_flags,
             sync_get,
-            local_ips
+            local_ips,
+            sync_selftest
         ]);
 
     // Fingerprint / face unlock exists on phones only.

@@ -339,6 +339,7 @@ function SyncthingStatus() {
   const [probes, setProbes] = useState<Probe[]>([]);
   const [scan, setScan] = useState<Probe[] | null>(null);
   const [ips, setIps] = useState<string[]>([]);
+  const [selfTest, setSelfTest] = useState("");
 
   const check = async () => {
     setBusy(true);
@@ -383,6 +384,17 @@ function SyncthingStatus() {
     }
   };
 
+  const runSelfTest = async () => {
+    setSelfTest("Running…");
+    if (!isTauri()) { setSelfTest("Only the installed app can run this."); return; }
+    const { invoke } = await import("@tauri-apps/api/core");
+    try {
+      setSelfTest((await invoke<string>("sync_selftest")) as string);
+    } catch (e) {
+      setSelfTest(String(e instanceof Error ? e.message : e));
+    }
+  };
+
   const runScan = async () => {
     setBusy(true);
     setScan(null);
@@ -409,9 +421,11 @@ function SyncthingStatus() {
         <div className="btnrow start">
           <button className="btn" type="submit" disabled={busy || !prefs.syncthingKey}>{busy ? "Checking…" : "Test connection"}</button>
           <button className="pill" type="button" onClick={runScan} disabled={busy}>Scan this device</button>
+          <button className="pill" type="button" onClick={runSelfTest} disabled={busy}>Self-test</button>
         </div>
       </form>
       {note && <p className="muted small">{note}</p>}
+      {selfTest && <p className="muted small">Self-test: {selfTest}</p>}
       {scan && (
         <div className="probes">
           <div className="cap">Scan of this device</div>
@@ -432,8 +446,8 @@ function SyncthingStatus() {
               {(p.health === "ok" || p.health === "tls") && <button className="pill" onClick={() => setPrefs({ syncthingUrl: p.url })}>Use</button>}
             </div>
           ))}
-          {scan.filter((p) => p.health === "other").slice(0, 3).map((p) => (
-            <p key={p.url + "detail"} className="mono small muted">{(p.detail || "no detail").slice(0, 160)}</p>
+          {scan.filter((p) => p.detail).slice(0, 4).map((p) => (
+            <p key={p.url + "detail"} className="mono small muted">{p.url}: {(p.detail || "").slice(0, 150)}</p>
           ))}
           <p className="muted small">{scan.length} addresses tried.</p>
         </div>
