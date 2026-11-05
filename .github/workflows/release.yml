@@ -39,6 +39,9 @@ jobs:
       - run: npm ci
       - name: Read the version
         id: ver
+        # On windows-latest this step otherwise runs under pwsh, where the nested quotes break and the tag comes out
+        # empty - tauri-action then skips every upload without failing.
+        shell: bash
         run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -86,6 +89,9 @@ jobs:
       - run: npm ci
       - name: Read the version
         id: ver
+        # On windows-latest this step otherwise runs under pwsh, where the nested quotes break and the tag comes out
+        # empty - tauri-action then skips every upload without failing.
+        shell: bash
         run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Create the Android project and add the widget, share receiver and permissions
         run: npm run android:setup
