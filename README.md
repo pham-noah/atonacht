@@ -3,6 +3,33 @@
 Daily notes and to-dos kept as plain Markdown files, on your own devices. One Tauri 2 + React codebase for desktop
 (Windows, macOS, Linux) and Android. Syncthing does the syncing, so there is no server and your notes are never locked in.
 
+## Screenshots
+
+**Phone, Glass theme** — Home, All tasks, a task mid-swipe, the board, the calendar, notes, the editor, Syncthing setup:
+
+<p>
+<img src="docs/screenshots/phone-home.png" width="200">
+<img src="docs/screenshots/phone-tasks.png" width="200">
+<img src="docs/screenshots/phone-swipe.png" width="200">
+<img src="docs/screenshots/phone-board.png" width="200">
+</p>
+<p>
+<img src="docs/screenshots/phone-calendar.png" width="200">
+<img src="docs/screenshots/phone-notes.png" width="200">
+<img src="docs/screenshots/phone-editor.png" width="200">
+<img src="docs/screenshots/phone-sync.png" width="200">
+</p>
+
+**Light theme, and the desktop layout** with its right-click menu:
+
+<p>
+<img src="docs/screenshots/phone-home-light.png" width="200">
+<img src="docs/screenshots/desktop-home.png" width="560">
+<br>
+<img src="docs/screenshots/desktop-context-menu.png" width="560">
+<img src="docs/screenshots/desktop-board.png" width="560">
+</p>
+
 ## Features
 
 **Notes** — the raw Markdown stays on screen on every line (`##`, `- [ ]`, `@due(…)`), with headings sized and
