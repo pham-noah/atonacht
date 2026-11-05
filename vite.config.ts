@@ -11,5 +11,7 @@ export default defineConfig({
   server: { port: 1420, strictPort: true, host: process.env.TAURI_DEV_HOST || false },
   build: { target: "es2020", outDir: "dist" },
   define: { __APP_VERSION__: JSON.stringify(pkg.version) }, // one version, read from package.json
-  test: { setupFiles: ["./src/tests/setup.ts"], testTimeout: 20000, hookTimeout: 20000 },
+  // Each integration test mounts the whole app in jsdom; saturating every core makes those mounts compete for the same
+  // second and time out at random. Four workers keeps the suite honest and still finishes in about a minute.
+  test: { setupFiles: ["./src/tests/setup.ts"], testTimeout: 20000, hookTimeout: 20000, poolOptions: { forks: { maxForks: 4, minForks: 1 } } },
 });
