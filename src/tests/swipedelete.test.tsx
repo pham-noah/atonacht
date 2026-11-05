@@ -30,7 +30,7 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 describe("swiping a task", () => {
-  it("completes it on a right swipe without opening the rename sheet", async () => {
+  it("completes it on a right swipe without starting a rename", async () => {
     const { title } = await boot();
     swipe(title, 90);
     await waitFor(() => expect(files()[Object.keys(files())[0]].content).toContain("- [x] Take a shower"));

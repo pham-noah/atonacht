@@ -58,7 +58,7 @@ export function InterfacePanel() {
     <TabOrder />
     <Group title="Swipe actions on tasks (phone)">
       <Choice label="Swipe right" value={prefs.swipeRight} onChange={(v) => setPrefs({ swipeRight: v })} options={[["complete", "Complete"], ["none", "Nothing"]]} />
-      <p className="muted small">Swipe a task all the way across, then let go. A swipe never opens the rename sheet.</p>
+      <p className="muted small">Swipe a task across, then let go. A swipe never starts a rename.</p>
       <Choice label="Swipe left" value={prefs.swipeLeft} onChange={(v) => setPrefs({ swipeLeft: v })} options={[["tomorrow", "Tomorrow"], ["delete", "Delete"], ["none", "Nothing"]]} />
     </Group>
     </>
@@ -247,11 +247,9 @@ export function SyncPanel() {
 }
 
 /**
- * Syncthing setup, written for someone who has never used Syncthing.
- *
- * The old panel dropped two bare inputs ("address", "API key") on the reader with a one-line hint, which is useless
- * unless you already know that Syncthing runs a web interface on port 8384 and hides a key in its settings. This walks
- * through install -> share the folder -> connect, and says what each part is for.
+ * Syncthing setup for someone who has never used Syncthing: install -> share the folder -> optional status read-out.
+ * The two fields alone are useless unless you already know that Syncthing runs a web interface on port 8384 and hides
+ * an API key in its settings, so each step says what it is for.
  */
 function SyncSetup({ folder }: { folder: string }) {
   const [copied, setCopied] = useState("");
@@ -449,8 +447,8 @@ export function FilesPanel() {
 }
 
 /**
- * Turns "it doesn't work on my phone" into something the person can read out: which step of the folder fails.
- * Runs the four things the app does with the notes folder, in order, and says what each one returned.
+ * Runs the four folder operations the app depends on, in order, and reports what each returned, so a failing step is
+ * identifiable without a debugger.
  */
 function FolderCheck() {
   const { prefs } = usePrefs();

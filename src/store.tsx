@@ -211,7 +211,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const all = useMemo(() => Object.fromEntries(Object.entries(data).map(([p, n]) => [p, n.content])), [data]);
-  // One pass over the paths: each one is either a sync-conflict copy, a template or a note. This used to run the
+  // One pass over the paths: each one is either a sync-conflict copy, a template or a note.
   // conflict pattern three times per path (once for each list) on every save.
   const { conflicts, notes, templates } = useMemo(() => {
     const conflicts: Conflict[] = [];

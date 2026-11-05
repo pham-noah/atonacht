@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fs } from "../lib/backend";
+import { isAndroidApp } from "../lib/platform";
 import { usePrefs } from "../prefs";
 import { Logo } from "./common";
 
@@ -45,7 +46,12 @@ export function FirstRun() {
       </div>
       {picker && <button className="btn big" onClick={pick}>{path.trim() ? "Choose a different folder" : "Choose folder"}</button>}
       {fs.native && !picker && <p className="muted small">Pick a folder that Syncthing can reach, like Documents. You can set up sync afterwards in Settings.</p>}
-      {fs.native && picker && <p className="muted small">The folder picker opens on <b>Documents/Atonacht</b>: make that folder there and choose it, or pick any folder you like. Android asks you to approve it once, and Atonacht can only see that folder.</p>}
+      {fs.native && picker && (
+        <p className="muted small">
+          The folder picker opens on <b>Documents/Atonacht</b>: make that folder there and choose it, or pick any folder you
+          like. {isAndroidApp() ? "Android asks you to approve it once, and Atonacht can only see that folder." : "Atonacht only reads and writes Markdown inside the folder you choose."}
+        </p>
+      )}
       {!fs.native && <p className="muted small">Browser demo: notes are kept in this browser. Run the Tauri app to use real files.</p>}
       {err && <p className="errtext">{err}</p>}
       {(!picker || path.trim()) && <button className="btn big" onClick={start} disabled={!path.trim()}>Get started</button>}

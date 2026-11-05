@@ -6,7 +6,7 @@ export interface Entry {
 }
 
 /**
- * How many notes sit in each folder (and in its subfolders), in one pass over the paths. The sidebar used to walk
+ * How many notes sit in each folder (and in its subfolders), in one pass over the paths.
  * every note once per folder, which is O(folders × notes) on each render of a big folder.
  */
 export function folderCounts(paths: string[]): Map<string, number> {

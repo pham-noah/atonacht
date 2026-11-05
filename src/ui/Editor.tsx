@@ -123,6 +123,7 @@ export function Editor({ path }: { path: string }) {
       {mode === "edit" ? (
         <div className="page" style={{ ["--ed-font" as string]: FONTS[prefs.editorFont], ["--ed-size" as string]: `${prefs.editorSize}px`, ["--ed-lh" as string]: prefs.lineHeight }}>
           <LiveEditor ref={area} value={text} onChange={change} onToggle={toggleLine} onLink={openLink} live={prefs.livePreview} spellcheck={prefs.spellcheck} />
+          {text.trim() === "" && <p className="muted small emptyhint">Start writing. Markdown works here: <span className="mono">#</span> for a heading, <span className="mono">- [ ]</span> for a task, <span className="mono">@due(2026-11-05)</span> for a date.</p>}
         </div>
       ) : (
         <div className="page preview" onClick={onPreviewClick} onDoubleClick={onPreviewDouble}>

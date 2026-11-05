@@ -21,6 +21,7 @@ import { ACCENTS, PrefsProvider, usePrefs } from "./prefs";
 import { StoreProvider, useStore } from "./store";
 const Calendar = lazy(() => import("./ui/Calendar").then((m) => ({ default: m.Calendar })));
 import { CaptureDialog, Icon, Logo, NewFolderDialog } from "./ui/common";
+import { MenuProvider } from "./ui/ContextMenu";
 const Conflicts = lazy(() => import("./ui/Conflicts").then((m) => ({ default: m.Conflicts })));
 const Board = lazy(() => import("./ui/Board").then((m) => ({ default: m.Board })));
 const Editor = lazy(() => import("./ui/Editor").then((m) => ({ default: m.Editor })));
@@ -270,7 +271,9 @@ function Gate() {
   if (!prefs.onboarded || !prefs.root) return <div className={`app ${prefs.theme} wide`} style={acc}><FirstRun /></div>;
   return (
     <StoreProvider>
-      <NavProvider><Shell /></NavProvider>
+      <NavProvider>
+        <MenuProvider><Shell /></MenuProvider>
+      </NavProvider>
     </StoreProvider>
   );
 }

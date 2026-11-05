@@ -3,7 +3,7 @@
 
 `tauri android init` (and every regeneration of gen/android) writes a plain MainActivity that leaves the status bar
 and the navigation bar on screen, and that ignores the back gesture. Atonacht is a reading and writing app, so the page
-owns the whole screen (immersive sticky, the bars only come in on an edge swipe - what Kairn does for a book), and the
+owns the whole screen (immersive sticky, the bars only come in on an edge swipe), and the
 back gesture is handed to the app first: it closes a sheet, walks back a screen, returns to Home, and only finishes the
 activity when there is nothing left to do. This patch is idempotent and is called from scripts/apply-android.sh.
 

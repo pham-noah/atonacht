@@ -75,7 +75,7 @@ export function Home() {
       <section className="card stack">
         <div className="rowhead"><h2 className="h2 grow">Today’s note</h2><button className="btn" onClick={() => go({ name: "editor", path: p })}>Open note</button></div>
         {notes[p] === undefined && ready && <button className="btn" onClick={() => openDaily(t)}>Create today’s note</button>}
-        {notes[p] !== undefined && todays.length === 0 && <p className="muted">Nothing planned yet. The night is over, so begin.</p>}
+        {notes[p] !== undefined && todays.length === 0 && <p className="muted">Nothing planned yet. Add a task above, or open the note to write.</p>}
         {todays.map((x) => <TaskRow key={x.id} task={x} source={false} />)}
         <form className="addrow" onSubmit={(e) => { e.preventDefault(); add(); }}>
           <input className="in" placeholder="Add a task to today" value={text} onChange={(e) => setText(e.target.value)} />

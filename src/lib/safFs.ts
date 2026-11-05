@@ -30,7 +30,7 @@ const nameOf = (p: string) => p.split("/").pop()!;
 
 /**
  * Lists a folder and everything under it. A folder or file the system will not let us read is skipped rather than
- * thrown: one awkward entry (a provider that fails on a subfolder, a broken shortcut) used to blank the whole app
+ * thrown: one awkward entry (a provider that fails on a subfolder, a broken shortcut) must not blank the whole app
  * because the failure took the entire refresh down with it.
  */
 async function walk(dir: A.FsUri, prefix: string, uris: Map<string, A.FsUri>, out: Entry[]) {
@@ -248,7 +248,7 @@ export const safFs: NotesFs = {
 
   async pickFolder() {
     // On a phone the notes belong in Documents/Atonacht, where Syncthing (or any sync app) can find them. The system
-    // picker opens there and the user confirms it - or picks any other folder, which is what used to happen.
+    // picker opens there and the user confirms it, or picks any other folder.
     const options = (initial?: { initialLocation: A.PickerInitialLocation }) =>
       ({ localOnly: true, ...initial }) as Parameters<typeof A.showOpenDirPicker>[0];
     let uri: A.FsUri | null;

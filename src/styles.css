@@ -257,6 +257,22 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .howto p{margin:8px 0 2px}
 .syncbox{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--fld)}
 
+/* a row of filters that scrolls sideways instead of wrapping into two lines of buttons */
+.scrollrow{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.scrollrow::-webkit-scrollbar{height:0}
+.scrollrow .pill{flex:0 0 auto}
+.emptyhint{margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}
+
+/* ---------- right-click menu (desktop) ---------- */
+.ctxmenu{position:fixed;z-index:60;padding:6px;border-radius:16px;background:var(--float);border:1px solid var(--line);box-shadow:var(--sh);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);animation:fadeIn .08s ease-out;max-height:70vh;overflow:auto}
+.ctxitem{display:flex;align-items:center;width:100%;height:40px;padding:0 12px;border:0;border-radius:10px;background:none;color:var(--txt);font-size:14px;text-align:left}
+.ctxitem:hover:not(:disabled),.ctxitem:focus-visible{background:color-mix(in srgb,var(--acc) 18%,transparent);outline:none}
+.ctxitem:disabled{opacity:.45}
+.ctxitem.danger{color:var(--warn)}
+.ctxitem.danger:hover:not(:disabled){background:color-mix(in srgb,var(--warn) 18%,transparent)}
+.ctxitem.sep{margin-top:7px;border-top:1px solid var(--line);border-top-left-radius:0;border-top-right-radius:0;padding-top:2px}
+.ctxitem.sep:hover:not(:disabled){border-radius:10px}
+
 /* ---------- boot ---------- */
 .boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg)}
 .boot svg{opacity:.9;animation:bootPulse 1.1s ease-in-out infinite alternate}

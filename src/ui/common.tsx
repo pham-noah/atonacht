@@ -1,6 +1,7 @@
 import { ReactNode, memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { pushBack } from "../lib/back";
+import { hasPointer, useMenu } from "./ContextMenu";
 import { addDays, shortDate, today } from "../lib/dates";
 import { Priority, Task } from "../lib/tasks";
 import { dateOfDaily, isDailyPath } from "../lib/daily";
@@ -141,6 +142,7 @@ export const TaskRow = memo(function TaskRow({ task, source = true }: { task: Ta
   const { toggle, updateTask, deleteTask } = useActions();
   const { go } = useNav();
   const { prefs } = usePrefs();
+  const menu = useMenu();
   const [edit, setEdit] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(task.title);
@@ -149,14 +151,14 @@ export const TaskRow = memo(function TaskRow({ task, source = true }: { task: Ta
   const press = useRef<ReturnType<typeof setTimeout> | null>(null);
   const held = useRef(false);
   const swiped = useRef(false);
-  // live drag: the row slides and a panel is revealed behind it, the way a queue row moves in Sonarar
+  // live drag: the row slides and a panel is revealed behind it
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const stopPress = () => {
     if (press.current) clearTimeout(press.current);
     press.current = null;
   };
-  const CAP = 140; // how far the row travels, same cap as a Sonarar queue row
+  const CAP = 140; // how far the row travels
   const COMMIT = 70; // let go past this and the action happens
   const track = (e: React.PointerEvent) => {
     const s = start.current;
@@ -181,7 +183,7 @@ export const TaskRow = memo(function TaskRow({ task, source = true }: { task: Ta
     if (!s || e.pointerType === "mouse") return;
     const dir = swipeDirection(e.clientX - s.x, e.clientY - s.y, 56); // 70+ pixels was a long drag for one thumb
     if (!dir) return;
-    swiped.current = true; // the click that follows must not open the rename sheet
+    swiped.current = true; // the click that follows must not start an inline rename
     if (dir === "right" && prefs.swipeRight === "complete") void toggle(task);
     if (dir === "left" && prefs.swipeLeft === "tomorrow" && !task.done) void updateTask(task, { due: addDays(today(), 1) });
     if (dir === "left" && prefs.swipeLeft === "delete") void deleteTask(task);
@@ -207,6 +209,29 @@ export const TaskRow = memo(function TaskRow({ task, source = true }: { task: Ta
       onPointerUp={(e) => { stopPress(); if (held.current) { start.current = null; return; } onSwipe(e); }}
       onPointerCancel={() => { stopPress(); start.current = null; setDragging(false); setDx(0); }}
       onPointerLeave={stopPress}
+      onContextMenu={(e) => {
+        if (!hasPointer()) return; // a long press on a phone already opens the editor
+        e.preventDefault();
+        menu.open({
+          x: e.clientX,
+          y: e.clientY,
+          items: [
+            { label: task.done ? "Reopen" : "Complete", run: () => void toggle(task) },
+            { label: "Rename", run: () => { setDraft(task.title); setRenaming(true); } },
+            { label: "", sep: true },
+            { label: "Due today", disabled: task.due === today(), run: () => void updateTask(task, { due: today() }) },
+            { label: "Due tomorrow", run: () => void updateTask(task, { due: addDays(today(), 1) }) },
+            { label: "No date", disabled: !task.due, run: () => void updateTask(task, { due: null }) },
+            { label: "", sep: true },
+            { label: task.priority === "high" ? "Normal priority" : "High priority", run: () => void updateTask(task, { priority: task.priority === "high" ? null : "high" }) },
+            { label: "Change date, repeat, column…", run: () => setEdit(true) },
+            { label: "", sep: true },
+            { label: "Open its note", run: () => go({ name: "editor", path: task.path }) },
+            { label: "Copy text", run: () => void navigator.clipboard?.writeText(`- [ ] ${task.title}`).catch(() => {}) },
+            { label: "Delete task", danger: true, sep: true, run: () => void deleteTask(task) },
+          ],
+        });
+      }}
     >
       <SwipePanel dx={dx} commit={COMMIT} cap={CAP} right={prefs.swipeRight} left={prefs.swipeLeft} done={task.done} />
       <div className="rowin" style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : undefined }}>
@@ -253,7 +278,7 @@ export const TaskRow = memo(function TaskRow({ task, source = true }: { task: Ta
 });
 
 /** The panel revealed while a row is dragged: tint and border grow with the distance, the icon grows, and past the
- *  commit point the label appears - the same language a Sonarar queue row uses. */
+ *  commit point the label appears. */
 function SwipePanel({ dx, commit, cap, right, left, done }: { dx: number; commit: number; cap: number; right: string; left: string; done: boolean }) {
   if (Math.abs(dx) < 4) return null;
   const toRight = dx > 0;

@@ -6,13 +6,18 @@ import { plural } from "../lib/plural";
 import { useNav } from "../nav";
 import { useStore } from "../store";
 import { BackBar, Modal, PageHead } from "./common";
+import { hasPointer, useMenu } from "./ContextMenu";
 
 const PAGE = 100; // rows drawn before "Show more", like the task list
 
 const when = (mtime: number) => (new Date(mtime).toLocaleDateString("sv") === today() ? "Today" : new Date(mtime).toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
 
 export function Notes({ folder, query = "" }: { folder?: string; query?: string }) {
-  const { notes, mtimes, dirs, tasks, save, templates, renameFolder, deleteFolder } = useStore();
+  const { notes, mtimes, dirs, tasks, save, templates, renameFolder, deleteFolder, pin, pinned, remove } = useStore();
+  const menu = useMenu();
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameTo, setRenameTo] = useState("");
+  const { renameNote } = useStore();
   const [folderOp, setFolderOp] = useState<"rename" | "delete" | null>(null);
   const [newName, setNewName] = useState(folder ?? "");
   const [opErr, setOpErr] = useState("");
@@ -54,7 +59,7 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
       <PageHead sub={folder ? `${plural(list.length, "note")} · ${plural(open, "open task")}` : `${plural(Object.keys(notes).length, "note")} in ${plural(folders.length, "folder")}`} title={folder ?? "Notes"} right={<>{folder && <><button className="pill" onClick={() => { setNewName(folder); setOpErr(""); setFolderOp("rename"); }}>Rename</button><button className="pill" onClick={() => { setOpErr(""); setFolderOp("delete"); }}>Delete</button></>}<button className="btn" onClick={() => setCreating(true)}>New note</button></>} />
       <input className="in" type="search" placeholder="Search notes" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />
       {!folder && (
-        <div className="pills">
+        <div className="pills scrollrow">
           <button className="pill on">All</button>
           {folders.map((f) => <button key={f} className="pill" onClick={() => go({ name: "notes", folder: f })}>{f}</button>)}
         </div>
@@ -62,7 +67,30 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
       <section className="card list">
         {list.length === 0 && <p className="muted">No notes found.</p>}
         {visible.map(([p, c]) => (
-          <button key={p} className="noterow" onClick={() => go({ name: "editor", path: p })}>
+          <button
+            key={p}
+            className="noterow"
+            onClick={() => go({ name: "editor", path: p })}
+            onContextMenu={(e) => {
+              if (!hasPointer()) return;
+              e.preventDefault();
+              const name = p.split("/").pop()!.replace(/\.md$/, "");
+              menu.open({
+                x: e.clientX,
+                y: e.clientY,
+                items: [
+                  { label: "Open", run: () => go({ name: "editor", path: p }) },
+                  { label: "Rename…", run: () => { setRenameTo(name); setRenaming(p); } },
+                  { label: pinned.includes(p) ? "Unpin" : "Pin", run: () => void pin(p, !pinned.includes(p)) },
+                  { label: "", sep: true },
+                  { label: "Copy title", run: () => void navigator.clipboard?.writeText(name).catch(() => {}) },
+                  { label: "Copy path", run: () => void navigator.clipboard?.writeText(p).catch(() => {}) },
+                  { label: "", sep: true },
+                  { label: "Move to trash", danger: true, run: () => void remove(p) },
+                ],
+              });
+            }}
+          >
             <span className="nt">{noteTitle(p, c)}</span>
             <span className="muted small">{snippet(c)}</span>
             <span className="meta"><span className="chip">{p.includes("/") ? p.split("/")[0] : "Notes"}</span><span className="muted small">{when(mtimes[p] ?? 0)}</span></span>
@@ -72,6 +100,25 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
           <button className="pill" onClick={() => setShown((n) => n + PAGE)}>Show {Math.min(PAGE, list.length - shown)} more of {list.length}</button>
         )}
       </section>
+      {renaming && (
+        <Modal title="Rename note" onClose={() => setRenaming(null)}>
+          <input className="in" autoFocus value={renameTo} onChange={(e) => setRenameTo(e.target.value)} aria-label="Note name" />
+          <div className="btnrow">
+            <button className="pill" onClick={() => setRenaming(null)}>Cancel</button>
+            <button
+              className="btn"
+              disabled={!renameTo.trim()}
+              onClick={async () => {
+                const from = renaming;
+                const dir = from.includes("/") ? from.slice(0, from.lastIndexOf("/") + 1) : "";
+                const to = `${dir}${renameTo.trim().replace(/\.md$/, "")}.md`;
+                setRenaming(null);
+                if (to !== from) await renameNote(from, to);
+              }}
+            >Rename</button>
+          </div>
+        </Modal>
+      )}
       {folderOp === "rename" && folder && (
         <Modal title="Rename folder" onClose={() => setFolderOp(null)}>
           <input className="in" autoFocus value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Folder name" />

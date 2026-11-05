@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
 /**
- * How many pixels the on-screen keyboard covers, or 0 when it is closed. On Android the WebView is resized (the manifest asks
- * for adjustResize), so the visual viewport is much shorter than the window; the bottom bar uses this to step out of the
- * way instead of jumping up over the page. On desktop it stays false.
+ * How many pixels the on-screen keyboard covers, or 0 when it is closed. The window keeps its size (the manifest asks for
+ * adjustNothing), so the visual viewport is the only thing that shrinks; sheets are lifted by this amount and the bottom
+ * bar steps aside instead of the page moving. On desktop it stays 0.
  */
 export function useKeyboard(threshold = 120): number {
   const [height, setHeight] = useState(0);
