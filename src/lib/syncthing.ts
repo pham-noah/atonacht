@@ -60,3 +60,49 @@ export function alternateLoopback(url: string): string | null {
   if (/localhost/.test(url)) return url.replace("localhost", "127.0.0.1");
   return null;
 }
+
+export interface Probe {
+  url: string;
+  /** What came back for the no-auth health endpoint: "ok" means something is listening there. */
+  health: "ok" | "unreachable" | "tls" | "other";
+  /** Whether the API key was accepted, when health already answered. */
+  key?: "accepted" | "rejected";
+  detail?: string;
+}
+
+const tlsError = (raw: string) => /certificate|tls|ssl|handshake|invalid peer/i.test(raw);
+const refusedError = (raw: string) => /error sending request|dns error|connection refused|Connect\(|os error 1\d{4}|timed? ?out|network is unreachable|no route/i.test(raw);
+
+/**
+ * Asks one address whether anything is listening (Syncthing's health endpoint needs no key), then whether the key
+ * works. This separates "no Syncthing here" from "wrong key" from "the web interface speaks HTTPS".
+ */
+export async function probeUrl(url: string, apiKey: string, fetcher: Fetcher): Promise<Probe> {
+  const base = url.replace(/\/+$/, "");
+  try {
+    const health = await fetcher(base + "/rest/noauth/health");
+    if (!health.ok) return { url: base, health: "other", detail: `health answered ${health.status}` };
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    return { url: base, health: tlsError(raw) ? "tls" : refusedError(raw) ? "unreachable" : "other", detail: raw };
+  }
+  try {
+    const r = await fetcher(base + "/rest/config", { headers: { "X-API-Key": apiKey } });
+    return { url: base, health: "ok", key: r.status === 401 || r.status === 403 ? "rejected" : "accepted" };
+  } catch (e) {
+    return { url: base, health: "ok", key: "rejected", detail: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** The addresses worth trying for one typed address: itself, the other loopback spelling, and https on both. */
+export function probeCandidates(url: string): string[] {
+  const base = url.replace(/\/+$/, "");
+  const out = [base];
+  const alt = alternateLoopback(base);
+  if (alt) out.push(alt);
+  for (const u of [base, alt]) {
+    if (!u) continue;
+    if (u.startsWith("http://")) out.push("https://" + u.slice(7));
+  }
+  return [...new Set(out)];
+}

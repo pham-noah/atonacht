@@ -263,6 +263,11 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .scrollrow .pill{flex:0 0 auto}
 .emptyhint{margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}
 
+/* the diagnostic list under Syncthing's address fields */
+.probes{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--fld)}
+.probe{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.probe .mono{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ---------- right-click menu (desktop) ---------- */
 .ctxmenu{position:fixed;z-index:60;padding:6px;border-radius:16px;background:var(--float);border:1px solid var(--line);box-shadow:var(--sh);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);animation:fadeIn .08s ease-out;max-height:70vh;overflow:auto}
 .ctxitem{display:flex;align-items:center;width:100%;height:40px;padding:0 12px;border:0;border-radius:10px;background:none;color:var(--txt);font-size:14px;text-align:left}

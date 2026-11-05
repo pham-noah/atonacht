@@ -8,6 +8,7 @@ const platformName = () => (isAndroidApp() ? "Android" : isMobileApp() ? "iOS" :
 
 async function githubFetcher(): Promise<JsonFetcher> {
   if (isTauri()) {
+    // https to the GitHub API is inside the plugin scope; Syncthing goes through Rust instead (see syncthingFetch.ts)
     const { fetch } = await import("@tauri-apps/plugin-http");
     return ((url: string) => fetch(url, { headers: { Accept: "application/vnd.github+json" } })) as unknown as JsonFetcher;
   }

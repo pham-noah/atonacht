@@ -17,6 +17,34 @@ struct EntryDto {
     size: u64,
 }
 
+/// Reads one Syncthing REST endpoint from Rust.
+///
+/// The app talks to Syncthing's local web interface, which is plain HTTP on a loopback or LAN address. Doing it here
+/// instead of through the web layer means no plugin URL scope to get wrong, no browser CORS, and the same behaviour on
+/// Android; the error string is what the UI turns into advice.
+#[tauri::command]
+async fn sync_get(url: String, path: String, key: String) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(6))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let full = format!("{}{}", url.trim_end_matches('/'), path);
+    let res = client
+        .get(&full)
+        .header("X-API-Key", key)
+        .send()
+        .await
+        .map_err(|e| format!("{} ({})", e, full))?;
+    let status = res.status();
+    if status.as_u16() == 401 || status.as_u16() == 403 {
+        return Err("Syncthing rejected the API key.".into());
+    }
+    if !status.is_success() {
+        return Err(format!("Syncthing answered {} for {} ({}).", status.as_u16(), path, full));
+    }
+    res.json::<serde_json::Value>().await.map_err(|e| format!("Syncthing sent something unreadable: {}", e))
+}
+
 #[tauri::command]
 fn default_root() -> String {
     notes_fs::default_root()
@@ -153,7 +181,8 @@ pub fn run() {
             watch_notes,
             unwatch_notes,
             set_widget_tasks,
-            set_privacy_flags
+            set_privacy_flags,
+            sync_get
         ]);
 
     // Fingerprint / face unlock exists on phones only.

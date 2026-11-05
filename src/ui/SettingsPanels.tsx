@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { saveBytes } from "../lib/exportFile";
-import { Fetcher, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus } from "../lib/syncthing";
+import { Fetcher, Probe, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus, probeCandidates, probeUrl } from "../lib/syncthing";
 import { noteCache } from "../lib/noteCache";
 import { fs, isTauri } from "../lib/backend";
 import { DAILY_TEMPLATE, STARTERS } from "../lib/templates";
@@ -8,6 +8,7 @@ import { useNav } from "../nav";
 import { ACCENTS, Theme, usePrefs } from "../prefs";
 import { useStore } from "../store";
 import { openExternal } from "../lib/update";
+import { syncthingFetcher } from "../lib/syncthingFetch";
 import { Choice, Group, Row, Slider, TimeField, Toggle } from "./SettingsParts";
 
 const THEMES: [Theme, string, string][] = [
@@ -335,13 +336,15 @@ function SyncthingStatus() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [probes, setProbes] = useState<Probe[]>([]);
 
   const check = async () => {
     setBusy(true);
     setErr("");
     setNote("");
-    // Inside the app the request goes through Tauri's HTTP plugin (limited to localhost); a browser would be blocked by CORS.
-    const f = (isTauri() ? (await import("@tauri-apps/plugin-http")).fetch : window.fetch.bind(window)) as unknown as Fetcher;
+    setProbes([]);
+    // In the app this runs in Rust, so there is no plugin scope and no CORS to get wrong; the browser demo uses fetch.
+    const f: Fetcher = await syncthingFetcher();
     // 127.0.0.1 and localhost are the same machine but not always the same listener, so try the other spelling before
     // giving up, and keep whichever answered.
     const tries = [prefs.syncthingUrl];
@@ -365,6 +368,14 @@ function SyncthingStatus() {
       }
       setStatus(null);
       setErr(describeSyncError(last, prefs.syncthingUrl) + (isTauri() ? "" : " The browser demo cannot reach Syncthing at all."));
+      // What answered where: this is the difference between "no Syncthing", "wrong key" and "the GUI speaks HTTPS".
+      const seen = await Promise.all(probeCandidates(prefs.syncthingUrl).map((u) => probeUrl(u, prefs.syncthingKey, f)));
+      setProbes(seen);
+      const working = seen.find((p) => p.health === "ok" && p.key === "accepted");
+      if (working && working.url !== prefs.syncthingUrl) {
+        setPrefs({ syncthingUrl: working.url });
+        setNote(`That address works, so it is saved: ${working.url}`);
+      }
     } finally {
       setBusy(false);
     }
@@ -379,6 +390,19 @@ function SyncthingStatus() {
         <div className="btnrow start"><button className="btn" type="submit" disabled={busy || !prefs.syncthingKey}>{busy ? "Checking…" : "Test connection"}</button></div>
       </form>
       {note && <p className="muted small">{note}</p>}
+      {probes.length > 0 && (
+        <div className="probes">
+          <div className="cap">What answered</div>
+          {probes.map((p) => (
+            <div key={p.url} className="probe">
+              <span className="mono grow">{p.url}</span>
+              <span className={`chip${p.health === "ok" && p.key === "accepted" ? " hi" : ""}`}>
+                {p.health === "tls" ? "HTTPS only" : p.health === "ok" ? (p.key === "accepted" ? "Working" : "Key rejected") : p.health === "unreachable" ? "Nothing there" : "No answer"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {err && <p className="errtext">{err}</p>}
       {status && (
         <>
