@@ -241,8 +241,25 @@ export function SyncPanel() {
         {error && <p className="errtext">{error}</p>}
         {!fs.native && <p className="muted small">You are running the browser demo. Notes are kept in this browser, not in files.</p>}
       </Group>
-      <SyncSetup folder={path.startsWith("saf:") ? label || path : path} />
-      <GitHubSetup />
+      <Group title="Sync">
+        <Choice
+          label="This device syncs with"
+          value={prefs.syncMethod}
+          options={[["syncthing", "Syncthing"], ["github", "GitHub"], ["both", "Both"], ["none", "Not now"]]}
+          onChange={(v) => setPrefs({ syncMethod: v })}
+        />
+        <p className="muted small">
+          {prefs.syncMethod === "none"
+            ? "Nothing is copied off this device. Your notes stay in the folder above."
+            : prefs.syncMethod === "both"
+              ? "Syncthing keeps the folder live between devices; GitHub keeps a versioned copy. Each section below is only used when you press its buttons."
+              : prefs.syncMethod === "github"
+                ? "GitHub holds a versioned copy of the folder. Nothing is fetched until you press Pull, so this is a copy you can trust with history rather than a live sync."
+                : "Syncthing keeps the folder identical on every device while it is running."}
+        </p>
+      </Group>
+      {(prefs.syncMethod === "syncthing" || prefs.syncMethod === "both") && <SyncSetup folder={path.startsWith("saf:") ? label || path : path} />}
+      {(prefs.syncMethod === "github" || prefs.syncMethod === "both") && <GitHubSetup />}
       <Group title="When something changes">
         <Row label="Conflicts" hint="Atonacht keeps both copies instead of choosing for you">{conflicts.length ? <button className="pill on" onClick={() => go({ name: "conflicts" })}>{conflicts.length} to review</button> : <span className="chip hi">None</span>}</Row>
         <Row label="Pick up changes now" hint="Atonacht watches the folder every few seconds; this forces a re-read now">
