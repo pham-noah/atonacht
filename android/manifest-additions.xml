@@ -8,6 +8,9 @@
     <meta-data android:name="android.appwidget.provider" android:resource="@xml/task_list_widget_info" />
 </receiver>
 <service android:name=".TaskListService" android:exported="false" android:permission="android.permission.BIND_REMOTEVIEWS" />
+<activity android:name=".QuickCaptureActivity" android:exported="false" android:excludeFromRecents="true"
+    android:theme="@android:style/Theme.Translucent.NoTitleBar"
+    android:windowSoftInputMode="stateVisible|adjustResize" />
 <provider android:name=".AtonachtInit" android:authorities="${applicationId}.atonacht-init" android:exported="false" android:initOrder="100" />
 <activity android:name=".ShareReceiverActivity" android:exported="true" android:label="Add to Atonacht"
     android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true">

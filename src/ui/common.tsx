@@ -16,7 +16,7 @@ const PATHS: Record<string, string> = {
   fwd: "M9 5l7 7-7 7",
   plus: "M12 5v14M5 12h14",
   x: "M6 6l12 12M18 6L6 18",
-  home: "M12 2v2M12 20v2M2 12h2M20 12h2M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
+  home: "M4 11.5 12 4l8 7.5M6 10v9h5v-6h2v6h5v-9",
   tasks: "M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3zM8.5 12l2.5 2.5 4.5-5",
   notes: "M6 3h8l4 4v14H6zM9 12h6M9 16h6",
   board: "M4 5h5v14H4zM10 5h4v9h-4zM15 5h5v11h-5z",

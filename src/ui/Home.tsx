@@ -15,6 +15,8 @@ export function Home() {
   const [text, setText] = useState("");
   const [addErr, setAddErr] = useState("");
   const [newFolder, setNewFolder] = useState(false);
+  // Home shows what is left to do by default; done work is one tap away instead of hidden.
+  const [show, setShow] = useState<"open" | "done" | "all">("open");
   const t = today();
   const p = dailyPath(t);
 
@@ -23,7 +25,10 @@ export function Home() {
     if (ready && !error && prefs.autoCreateDaily) openDaily(t);
   }, [ready, error, t, openDaily, prefs.autoCreateDaily]);
 
-  const todays = tasks.filter((x) => x.path === p && !x.done);
+  const inToday = tasks.filter((x) => x.path === p);
+  const open = inToday.filter((x) => !x.done);
+  const done = inToday.filter((x) => x.done);
+  const todays = show === "open" ? open : show === "done" ? done : inToday;
   const dueToday = tasks.filter((x) => x.due === t && !x.done && x.path !== p);
   const carry = useMemo(() => findCarryOver(notes, t), [notes, t]);
   const showCarry = carry && prefs.carryOver === "ask" && prefs.carryDismissed !== t && notes[p] !== undefined;
@@ -75,7 +80,28 @@ export function Home() {
       <section className="card stack">
         <div className="rowhead"><h2 className="h2 grow">Today’s note</h2><button className="btn" onClick={() => go({ name: "editor", path: p })}>Open note</button></div>
         {notes[p] === undefined && ready && <button className="btn" onClick={() => openDaily(t)}>Create today’s note</button>}
-        {notes[p] !== undefined && todays.length === 0 && <p className="muted">Nothing planned yet. Add a task above, or open the note to write.</p>}
+        {(open.length > 0 || done.length > 0) && (
+          <div className="pills" role="radiogroup" aria-label="Which tasks to show">
+            {([["open", `To do${open.length ? ` · ${open.length}` : ""}`], ["done", `Done${done.length ? ` · ${done.length}` : ""}`], ["all", "All"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                role="radio"
+                aria-checked={show === key}
+                className={`pill${show === key ? " on" : ""}`}
+                onClick={() => setShow(key)}
+              >{label}</button>
+            ))}
+          </div>
+        )}
+        {notes[p] !== undefined && todays.length === 0 && (
+          <p className="muted">
+            {show === "done"
+              ? "Nothing finished yet today."
+              : show === "open"
+                ? "Nothing left to do. Done work is under “Done”."
+                : "Nothing planned yet. Add a task above, or open the note to write."}
+          </p>
+        )}
         {todays.map((x) => <TaskRow key={x.id} task={x} source={false} />)}
         <form className="addrow" onSubmit={(e) => { e.preventDefault(); add(); }}>
           <input className="in" placeholder="Add a task to today" value={text} onChange={(e) => setText(e.target.value)} />

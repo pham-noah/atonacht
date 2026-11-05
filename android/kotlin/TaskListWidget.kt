@@ -3,6 +3,7 @@ package __PACKAGE__
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +14,12 @@ import org.json.JSONObject
 class TaskListWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         render(context, manager, ids)
+    }
+
+    override fun onEnabled(context: Context) {
+        // placed for the first time: draw whatever the app last saved instead of the bare initial layout
+        val manager = AppWidgetManager.getInstance(context)
+        render(context, manager, manager.getAppWidgetIds(ComponentName(context, TaskListWidget::class.java)))
     }
 
     companion object {
@@ -26,13 +33,22 @@ class TaskListWidget : AppWidgetProvider() {
         fun render(context: Context, manager: AppWidgetManager, ids: IntArray) {
             val raw = context.getSharedPreferences(WidgetBridge.PREFS, Context.MODE_PRIVATE).getString(WidgetBridge.KEY, null)
             val data = try { JSONObject(raw ?: "{}") } catch (e: Exception) { JSONObject() }
+            // With no snapshot the widget cannot know anything yet: say why instead of claiming the day is clear.
+            val neverLoaded = raw == null
             val date = data.optString("date", "Today")
             val count = data.optInt("count", 0)
 
             for (id in ids) {
                 val views = RemoteViews(context.packageName, R.layout.widget_tasks)
                 views.setTextViewText(R.id.widget_date, date)
-                views.setTextViewText(R.id.widget_count, if (count == 0) "All clear" else "$count open")
+                views.setTextViewText(
+                    R.id.widget_count,
+                    when {
+                        neverLoaded -> "Open Atonacht to load today’s tasks"
+                        count == 0 -> "All clear"
+                        else -> "$count open"
+                    },
+                )
 
                 val service = Intent(context, TaskListService::class.java)
                     .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)

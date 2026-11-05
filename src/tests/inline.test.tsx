@@ -46,8 +46,8 @@ describe("editing one line in the preview", () => {
 
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
     fireEvent.click(await screen.findByText("Thesis outline", { selector: ".nt" }));
-    await screen.findByRole("button", { name: "Preview" });
-    fireEvent.click(screen.getByRole("button", { name: "Preview" }));
+    // the note opens in preview; the toggle offers the other direction
+    await screen.findByRole("button", { name: "Edit" });
 
     const line = await screen.findByText("Email supervisor");
     fireEvent.doubleClick(line);
@@ -68,7 +68,7 @@ describe("editing one line in the preview", () => {
     await boot({ "Personal/Notes.md": original });
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
     fireEvent.click(await screen.findByText("Notes", { selector: ".nt" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Preview" }));
+    await screen.findByRole("button", { name: "Edit" });
 
     const line = await screen.findByText("One line.");
     fireEvent.doubleClick(line);

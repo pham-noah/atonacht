@@ -17,7 +17,8 @@ export function Editor({ path }: { path: string }) {
   const [renaming, setRenaming] = useState(false);
   const stored = notes[path];
   const [text, setText] = useState(stored ?? "");
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  // A note opens to be read. Editing is a choice, and the toggle says which one is on.
+  const [mode, setMode] = useState<"edit" | "preview">("preview");
   const [state, setState] = useState<"saved" | "saving" | "error">("saved");
   const dirty = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();

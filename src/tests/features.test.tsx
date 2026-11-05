@@ -37,6 +37,8 @@ describe("command palette", () => {
     fireEvent.change(box, { target: { value: "tide" } });
     expect(await screen.findByRole("option", { name: /Tide roguelike/ })).toBeTruthy();
     fireEvent.keyDown(box, { key: "Enter" });
+    // a note opens to be read, so the source is one tap away
+    fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
     await waitFor(() => expect(document.querySelector(".cm-content")?.textContent).toContain("Tide roguelike"));
     // actions work too
     fireEvent.keyDown(window, { key: "k", metaKey: true });
@@ -475,6 +477,7 @@ describe("project boards: drag and drop", () => {
     await screen.findByRole("listitem", { name: "Blocked" });
     expect(board()).toContain("## Blocked");
     fireEvent.click(screen.getByRole("button", { name: "Open as a note" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
     await waitFor(() => expect(document.querySelector(".cm-content")?.textContent).toContain("kanban-plugin"));
   });
 });
