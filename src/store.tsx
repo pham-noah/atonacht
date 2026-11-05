@@ -60,6 +60,8 @@ interface Store {
   addTaskToToday: (text: string, due?: string | null) => Promise<void>;
   openDaily: (date?: string) => Promise<string>;
   resolve: (c: Conflict, how: Resolution) => Promise<void>;
+  /** Saves a version merged by hand and clears the conflict copy. */
+  resolveMerged: (c: Conflict, text: string) => Promise<void>;
   refresh: () => Promise<void>;
   loadTrash: () => Promise<Entry[]>;
   restore: (trashPath: string) => Promise<string>;
@@ -363,6 +365,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const to = conflictCopyPath(c.original, c.stamp);
         await save(to, other);
       }
+      await fs.remove(root, c.path);
+      put(c.path, null);
+    },
+    resolveMerged: async (c, text) => {
+      await save(c.original, text);
       await fs.remove(root, c.path);
       put(c.path, null);
     },
