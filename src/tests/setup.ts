@@ -1,5 +1,10 @@
 import "fake-indexeddb/auto"; // jsdom has no IndexedDB
 import { beforeAll } from "vitest";
+import { configure } from "@testing-library/react";
+
+// waitFor gives up after one second by default. These are whole-app integration tests: when four of them mount at once
+// on a busy machine, a second is not enough and a passing test fails at random. Five seconds is still a real limit.
+configure({ asyncUtilTimeout: 5000 });
 
 // The startup cache is per notes folder ("demo" in almost every test), so notes cached by one test file were replayed
 // at the start of the next one - before refresh() corrected it. Once per file, so a file can still test the cache itself.

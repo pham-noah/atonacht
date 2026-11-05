@@ -12,7 +12,8 @@ export type Route =
   | { name: "conflicts" }
   | { name: "weekly" }
   | { name: "library" }
-  | { name: "trash" };
+  | { name: "trash" }
+  | { name: "update" };
 
 interface Nav {
   route: Route;

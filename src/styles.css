@@ -289,6 +289,27 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;animation:pulse 2.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
+/* the update screen: this build on the left, the latest release on the right */
+.up-head{gap:10px}
+.up-row{display:flex;align-items:center;gap:12px}
+.up-right{text-align:right}
+.up-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.up-version{font:600 26px/1.2 Fraunces,Georgia,serif;font-variant-numeric:tabular-nums}
+.up-arrow{color:var(--muted);font-size:20px}
+.up-state{display:flex;flex-wrap:wrap;gap:8px}
+.up-notes{display:flex;flex-direction:column;gap:8px;font-size:14.5px;line-height:1.55}
+.up-notes h1,.up-notes h2,.up-notes h3{margin:10px 0 2px;font-size:15px}
+.up-notes h1:first-child,.up-notes h2:first-child,.up-notes h3:first-child{margin-top:0}
+.up-notes ul{margin:0;padding-left:18px}
+.up-notes li{margin:3px 0}
+.up-notes code{font-size:13px}
+.up-notes hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+/* on a phone the two actions are the point of the screen: give them the width, one under the other */
+@media (max-width:899px){
+  .updater .up-actions{flex-direction:column}
+  .updater .up-actions>.btn,.updater .up-actions>.pill{width:100%;justify-content:center}
+}
+
 /* the diagnostic list under Syncthing's address fields */
 .probes{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--fld)}
 .probe{display:flex;align-items:center;gap:10px;font-size:12.5px}

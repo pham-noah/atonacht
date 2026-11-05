@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
+import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { JsonFetcher, checkForUpdate, isNewer, issueUrl, latestRelease, parseVersion } from "../lib/update";
 import { AboutPanel } from "../ui/AboutPanel";
+import { Update } from "../ui/Update";
+import { NavProvider } from "../nav";
+import { PrefsProvider } from "../prefs";
 
 const json = (body: unknown, status = 200): JsonFetcher => async () => ({ ok: status < 400, status, json: async () => body });
 const boom: JsonFetcher = async () => {
@@ -69,10 +73,38 @@ describe("reporting a problem", () => {
   });
 });
 
+describe("the update screen", () => {
+  const wrap = ({ children }: { children: ReactNode }) => (
+    <PrefsProvider><NavProvider>{children}</NavProvider></PrefsProvider>
+  );
+
+  it("answers without being asked, and offers the download when there is one", async () => {
+    render(<Update fetcher={async () => json(release("v0.9.0"))} />, { wrapper: wrap });
+    // the check runs on open: by the time the card is readable the answer is there
+    expect(await screen.findByText(/A newer version is available/)).toBeTruthy();
+    expect(screen.getByText("0.9.0")).toBeTruthy();
+    expect(screen.getByText(/What’s new in 0\.9\.0/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Download the APK" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Release page" })).toBeTruthy();
+  });
+
+  it("says the build is current, with no download offered", async () => {
+    render(<Update fetcher={async () => json(release("v0.0.1"))} />, { wrapper: wrap });
+    expect(await screen.findByText(/You are on the latest version/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Download the APK" })).toBeNull();
+  });
+
+  it("says so when GitHub cannot be reached, and can try again", async () => {
+    render(<Update fetcher={async () => boom} />, { wrapper: wrap });
+    expect(await screen.findByText(/Could not check/)).toBeTruthy();
+    expect(screen.getByText(/offline/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Check again" })).toBeTruthy();
+  });
+});
+
 describe("the About panel", () => {
-  it("shows the version, the author, the repository, licences and the update answer", async () => {
-    const fetcher = async () => json(release("v0.9.0"));
-    render(<AboutPanel fetcher={fetcher} />);
+  it("shows the version, the author, the repository and the licences, and opens the update screen", () => {
+    render(<AboutPanel />, { wrapper: ({ children }: { children: ReactNode }) => <PrefsProvider><NavProvider>{children}</NavProvider></PrefsProvider> });
     expect(screen.getByText(/^Atonacht \d+\.\d+\.\d+$/)).toBeTruthy();
     expect(screen.getByText("Made by Pham-Noah")).toBeTruthy();
     expect(screen.getByText("Atonacht on GitHub")).toBeTruthy();
@@ -84,14 +116,8 @@ describe("the About panel", () => {
     expect(screen.getByText("CodeMirror 6 and Lezer")).toBeTruthy();
     expect(screen.getAllByText("SIL Open Font License 1.1").length).toBe(2); // Inter and Fraunces
 
-    fireEvent.click(screen.getByRole("button", { name: "Check now" }));
-    await waitFor(() => expect(screen.getByText(/Version 0\.9\.0 is available/)).toBeTruthy());
-    expect(screen.getByRole("button", { name: "Download APK" })).toBeTruthy();
-  });
-
-  it("says so when it cannot reach GitHub", async () => {
-    render(<AboutPanel fetcher={async () => boom} />);
-    fireEvent.click(screen.getByRole("button", { name: "Check now" }));
-    await waitFor(() => expect(screen.getByText(/Could not check: offline/)).toBeTruthy());
+    // the check itself lives on its own screen now
+    expect(screen.queryByRole("button", { name: "Check now" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Open" })).toBeTruthy();
   });
 });
