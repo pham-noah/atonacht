@@ -13,7 +13,8 @@ async function boot(count: number) {
   for (let i = 0; i < count; i++) files[`Notes/note ${i}.md`] = { content: `# note ${i}\n\nbody ${i}\n`, mtime: 1_700_000_000_000 + i };
   localStorage.setItem("atonacht.demo", JSON.stringify({ dirs: ["Notes"], files }));
   localStorage.setItem("atonacht.prefs", JSON.stringify({ onboarded: true, root: "demo", theme: "solid", startupCache: false }));
-  window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+  // a phone-sized window: the sidebar lives in a drawer, so the page keeps its own search field
+  window.matchMedia = ((q: string) => ({ matches: !q.includes("min-width: 900px"), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
   const { default: App } = await import("../App");
   render(<App />);
   await screen.findByText("Today’s note");

@@ -69,7 +69,9 @@ export function Calendar({ date }: { date?: string }) {
         {/* while the folder is still being read, "nothing on this day" would be a lie that flashes on screen */}
         {!ready && <p className="muted">Reading your notes…</p>}
         {ready && !note && dueOn.length === 0 && <p className="muted">Nothing on this day.</p>}
-        {note && inNote.length === 0 && dueOn.length === 0 && <p className="muted">Nothing planned on this day.</p>}
+        {note && inNote.length === 0 && dueOn.length === 0 && (
+          <p className="muted">The note for this day is there, with no tasks in it. Open it to write.</p>
+        )}
       </section>
     </>
   );

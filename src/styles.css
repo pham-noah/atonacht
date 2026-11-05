@@ -82,6 +82,9 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .kcard,.kcard *{touch-action:pan-y}
 .row:last-child{border-bottom:0}
 .bar{display:flex;align-items:center;gap:8px;min-height:48px}
+.barlabel{display:flex;flex-direction:column;min-width:0}
+.bartitle{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barsub{color:var(--muted);font-size:12px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .banner{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--cr);color:var(--txt);text-align:left;width:100%}
 .warnb{border-color:var(--warn)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
@@ -103,7 +106,7 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .dot{width:8px;height:8px;border-radius:50%;background:#6FE3B0}.dot.bad{background:var(--warn)}
 .main{flex:1;min-width:0;overflow:auto;display:flex;flex-direction:column;padding:max(20px,env(safe-area-inset-top)) 20px calc(var(--th) + var(--tm) + 36px);gap:14px}
 .content{display:flex;flex-direction:column;gap:14px;width:100%;max-width:880px}
-.wide .main{padding:36px 40px;align-items:flex-start}
+.wide .main{padding:36px 40px;align-items:center}
 .wide .tabs,.wide .fab,.wide .brandbtn,.wide .drawerscrim{display:none}
 .brandbtn{display:flex;align-items:center;gap:10px;background:none;border:0;min-height:44px;color:var(--txt);padding:0;align-self:flex-start}
 .brandbtn .brandname{font-size:20px}
@@ -117,7 +120,7 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;color:var(--muted);font-size:12px}
 .tabs button.on{color:var(--hiT)}
 .fab{position:fixed;right:20px;bottom:calc(var(--th) + var(--tm) + 28px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:19px;border:1px solid rgba(255,255,255,.16);background:var(--acc);color:var(--accT);box-shadow:var(--fsh);display:flex;align-items:center;justify-content:center;z-index:11}
-.app:not(.wide) .content{padding-bottom:96px} /* room for the + so it never covers the last card */
+.app:not(.wide) .content{padding-bottom:calc(var(--th) + 120px)} /* the + and the tab bar never cover the last card */
 .scrim{position:fixed;inset:0;background:rgba(5,7,20,.5);z-index:40;display:flex;align-items:flex-end;justify-content:center}
 .sheet{width:min(520px,calc(100% - 16px));margin:8px;border-radius:32px;padding:10px 18px 20px;display:flex;flex-direction:column;gap:12px;max-height:92%;overflow:auto;background:var(--side);overscroll-behavior:contain}
 .sheetbody{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;overscroll-behavior:contain}
@@ -182,6 +185,11 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .mini-solid{background:#12141F}.mini-solid span{background:#1B1E2E;border:1px solid #2A2E44}
 .mini-light{background:linear-gradient(160deg,#EAF1FF,#C9D8FF)}.mini-light span{background:rgba(255,255,255,.8);border:1px solid rgba(30,40,90,.15)}
 .srow{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 0;flex-wrap:wrap}
+.wide .srow{max-width:680px} /* the label and its control belong near each other, not 600px apart */
+.srow input[type=checkbox]{appearance:none;flex:none;width:44px;height:26px;border-radius:999px;background:var(--chip);position:relative;cursor:pointer;transition:background .16s ease;border:1px solid var(--line)}
+.srow input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--txt);opacity:.85;transition:transform .16s cubic-bezier(.2,.8,.2,1),opacity .16s}
+.srow input[type=checkbox]:checked{background:var(--acc);border-color:var(--acc)}
+.srow input[type=checkbox]:checked::after{transform:translateX(18px);background:var(--accT);opacity:1}
 /* the label keeps a readable column; a control that does not fit drops to the next line instead of squeezing it */
 .srow .grow{flex:1 1 auto;min-width:min(100%,11.5em)}
 .srow>.pills,.srow>.btn,.srow>.pill,.srow>.ib,.srow>input:not(.in),.srow>select,.srow>.chip,.srow>.timein,.srow>.movebtns{flex:0 0 auto;margin-left:auto}

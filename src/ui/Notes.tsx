@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useWide } from "../useWide";
 import { today } from "../lib/dates";
 import { fillTemplate } from "../lib/templates";
 import { noteTitle, snippet } from "../lib/markdown";
@@ -53,11 +54,13 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
     go({ name: "editor", path });
   };
 
+  // On a wide window the sidebar already has a search field; two of them on one screen is a bug, not a feature.
+  const wide = useWide();
   return (
     <>
       {folder && <BackBar label="Folders" />}
       <PageHead sub={folder ? `${plural(list.length, "note")} · ${plural(open, "open task")}` : `${plural(Object.keys(notes).length, "note")} in ${plural(folders.length, "folder")}`} title={folder ?? "Notes"} right={<>{folder && <><button className="pill" onClick={() => { setNewName(folder); setOpErr(""); setFolderOp("rename"); }}>Rename</button><button className="pill" onClick={() => { setOpErr(""); setFolderOp("delete"); }}>Delete</button></>}<button className="btn" onClick={() => setCreating(true)}>New note</button></>} />
-      <input className="in" type="search" placeholder="Search notes" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />
+      {!wide && <input className="in" type="search" placeholder="Search notes" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />}
       {!folder && (
         <div className="pills scrollrow">
           <button className="pill on">All</button>
