@@ -4,6 +4,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch: # lets the Android/desktop jobs be re-run on an existing tag
 
 permissions:
   contents: write
@@ -57,9 +58,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
-      - name: Install NDK
-        run: sdkmanager "ndk;27.0.12077973" "build-tools;35.0.0" "platforms;android-35"
+      - name: Install NDK, build tools and platform
+        run: |
+          # The setup-android action calls `sdkmanager tools`, a package that was removed; use the SDK's own manager.
+          SDKMAN="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMAN" ] || SDKMAN="$(find "$ANDROID_HOME" -name sdkmanager -type f | head -n1)"
+          yes | "$SDKMAN" --install "ndk;27.0.12077973" "build-tools;35.0.0" "platforms;android-35" > /dev/null
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
