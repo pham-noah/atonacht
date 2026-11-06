@@ -18,6 +18,14 @@ OUT="Atonacht-transfer/Atonacht-${VERSION}-release.apk"
 
 [ -f "$KS" ] || { echo "no keystore at $KS" >&2; exit 1; }
 [ -f "$UNSIGNED" ] || { echo "no unsigned APK; run npx tauri android build --apk first" >&2; exit 1; }
+
+# The build regenerates tauri.properties with the version it compiled. If it does not match package.json, the unsigned
+# APK is left over from an earlier build and signing it would publish the old app under the new number.
+BUILT=$(sed -n 's/^tauri.android.versionName=//p' src-tauri/gen/android/app/tauri.properties 2>/dev/null | tr -d '')
+if [ "$BUILT" != "$VERSION" ]; then
+  echo "the unsigned APK is version '$BUILT', not '$VERSION' - run the Android build again" >&2
+  exit 1
+fi
 mkdir -p Atonacht-transfer
 TMP="Atonacht-transfer/.signing"   # inside the project: native tools cannot read MSYS /tmp paths
 mkdir -p "$TMP"
