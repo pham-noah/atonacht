@@ -10,6 +10,8 @@ export interface Task {
   text: string; // everything after the checkbox
   title: string; // text without @due / @repeat / !priority
   due?: string;
+  /** Time of day for the reminder, `@at(18:00)`. Without it the reminder uses the app's default time. */
+  at?: string;
   priority?: Priority;
   repeat?: string;
   doneOn?: string;
@@ -20,6 +22,7 @@ export interface Task {
 
 const TASK_RE = /^(\s*)([-*+]) \[([ xX])\] ?(.*)$/;
 const DUE_RE = /@due\((\d{4}-\d{2}-\d{2})\)/;
+const AT_RE = /@at\((\d{1,2}:\d{2})\)/;
 const DONE_RE = /@done\((\d{4}-\d{2}-\d{2})\)/;
 const STATUS_RE = /@status\(([^)]+)\)/;
 const REPEAT_RE = /@repeat\(([^)]+)\)/;
@@ -38,6 +41,7 @@ export function parseTaskLine(path: string, line: number, raw: string): Task | n
   const text = m[4];
   const title = text
     .replace(DUE_RE, "")
+    .replace(AT_RE, "")
     .replace(REPEAT_RE, "")
     .replace(DONE_RE, "")
     .replace(STATUS_RE, "")
@@ -52,6 +56,7 @@ export function parseTaskLine(path: string, line: number, raw: string): Task | n
     text,
     title,
     due: DUE_RE.exec(text)?.[1],
+    at: AT_RE.exec(text)?.[1]?.padStart(5, "0"),
     priority: PRIO_RE.exec(text)?.[2] as Priority | undefined,
     repeat: REPEAT_RE.exec(text)?.[1],
     doneOn: DONE_RE.exec(text)?.[1],
@@ -111,6 +116,7 @@ export interface TaskEdit {
   priority?: Priority | null;
   repeat?: string | null;
   status?: string | null;
+  at?: string | null;
 }
 
 /** Rewrite one task line, keeping tags and links in the text. */
@@ -135,8 +141,10 @@ export function editTask(content: string, line: number, edit: TaskEdit): string 
   const priority = edit.priority === undefined ? old.priority : edit.priority;
   const repeat = edit.repeat === undefined ? old.repeat : edit.repeat;
   const status = edit.status === undefined ? old.status : edit.status;
+  const at = edit.at === undefined ? old.at : edit.at;
   const parts = [title];
   if (due) parts.push(`@due(${due})`);
+  if (due && at) parts.push(`@at(${at})`);
   if (repeat) parts.push(`@repeat(${repeat})`);
   if (status) parts.push(`@status(${status})`);
   if (priority) parts.push(`!${priority}`);

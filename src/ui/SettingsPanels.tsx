@@ -204,6 +204,9 @@ export function RemindersPanel() {
             <TimeField label="Weekly review time" value={r.reviewTime} onChange={(v) => set({ reviewTime: v })} />
           </>
         )}
+        <TimeField label="Stay quiet from" value={r.quietFrom} onChange={(v) => set({ quietFrom: v })} />
+        <TimeField label="Until" value={r.quietTo} onChange={(v) => set({ quietTo: v })} />
+        <p className="muted small">Anything that would arrive inside this window waits until it ends, so a task due at 23:00 is announced in the morning instead of at midnight.</p>
       </Group>
       <p className="muted small">
         {fs.native

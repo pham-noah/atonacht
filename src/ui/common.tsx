@@ -307,13 +307,14 @@ export function TaskDialog({ task, onClose }: { task: Task; onClose: () => void 
   const { updateTask } = useStore();
   const [title, setTitle] = useState(task.title);
   const [due, setDue] = useState(task.due ?? "");
+  const [at, setAt] = useState(task.at ?? "");
   const [priority, setPriority] = useState<Priority | "">(task.priority ?? "");
   const [repeat, setRepeat] = useState(task.repeat ?? "");
   const { prefs } = usePrefs();
   const [status, setStatus] = useState(task.status ?? "");
   const columns = columnsFor(prefs.kanbanColumns).filter((col) => col.kind === "status");
   const save = async () => {
-    await updateTask(task, { title, due: due || null, priority: priority || null, repeat: repeat || null, status: task.done ? undefined : status || null });
+    await updateTask(task, { title, due: due || null, at: due && at ? at : null, priority: priority || null, repeat: repeat || null, status: task.done ? undefined : status || null });
     onClose();
   };
   return (
@@ -332,6 +333,13 @@ export function TaskDialog({ task, onClose }: { task: Task; onClose: () => void 
         onKeyDown={(e) => { if (e.key === "Enter") void save(); }}
       />
       <label className="field"><span>Due</span><input type="date" className="in" value={due} onChange={(e) => setDue(e.target.value)} /></label>
+      {due && (
+        <label className="field">
+          <span>Remind at</span>
+          <input type="time" className="in" value={at} onChange={(e) => setAt(e.target.value)} aria-label="Reminder time" />
+        </label>
+      )}
+      {due && <p className="muted small">{at ? `Written as @at(${at}) in the note.` : "Leave it empty to use the default reminder time from Settings."}</p>}
       <label className="field"><span>Priority</span>
         <select className="in" value={priority} onChange={(e) => setPriority(e.target.value as Priority | "")}>
           <option value="">None</option><option value="low">Low</option><option value="med">Medium</option><option value="high">High</option>
