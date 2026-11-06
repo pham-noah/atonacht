@@ -234,6 +234,50 @@ fn unwatch_notes(state: State<WatchState>) {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Brings the main window up and asks the frontend to open the capture sheet.
+#[cfg(desktop)]
+fn show_and_capture(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.show();
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+        let _ = w.emit("quick-capture", ());
+    }
+}
+
+/// Tray icon: the app can be running without a window, so there is a way back to it (and a way to quit).
+#[cfg(desktop)]
+fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem};
+    use tauri::Manager;
+    use tauri::tray::TrayIconBuilder;
+
+    let capture = MenuItem::with_id(app, "capture", "Quick capture", true, Some("Ctrl+Alt+N"))?;
+    let show = MenuItem::with_id(app, "show", "Show Atonacht", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&capture, &show, &quit])?;
+    let mut tray = TrayIconBuilder::with_id("atonacht")
+        .menu(&menu)
+        .tooltip("Atonacht")
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "capture" => show_and_capture(app),
+            "show" => {
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                }
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        });
+    if let Some(icon) = app.default_window_icon().cloned() {
+        tray = tray.icon(icon);
+    }
+    tray.build(app)?;
+    Ok(())
+}
+
 pub fn run() {
     let builder = tauri::Builder::default()
         .manage(WatchState::default())
@@ -269,6 +313,27 @@ pub fn run() {
     // Fingerprint / face unlock exists on phones only.
     #[cfg(mobile)]
     let builder = builder.plugin(tauri_plugin_biometric::init());
+
+    // A desktop has a keyboard, so capture from anywhere: Ctrl+Alt+N brings the window up with the capture sheet open.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(|app, shortcut, event| {
+            if event.state() != tauri_plugin_global_shortcut::ShortcutState::Pressed {
+                return;
+            }
+            if shortcut.to_string().to_lowercase().contains("alt+ctrl+n") || shortcut.to_string().to_lowercase().contains("ctrl+alt+n") {
+                show_and_capture(app);
+            }
+        }
+        ).build())
+        .setup(|app| {
+            use tauri_plugin_global_shortcut::GlobalShortcutExt;
+            let gs = app.global_shortcut();
+            let _ = gs.register("ctrl+alt+n");
+            let _ = gs.register("ctrl+alt+space");
+            build_tray(app.handle())?;
+            Ok(())
+        });
 
     builder
         .run(tauri::generate_context!())

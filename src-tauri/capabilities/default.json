@@ -29,6 +29,8 @@
           "url": "https://api.github.com/*"
         }
       ]
-    }
+    },
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister"
   ]
 }

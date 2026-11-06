@@ -181,6 +181,17 @@ function Shell() {
     return () => clearInterval(t);
   }, [ready, prefs.trashDays]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Ctrl+Alt+N and the tray icon ask for the capture sheet from the Rust side.
+  useEffect(() => {
+    if (!isTauri()) return;
+    let off: (() => void) | undefined;
+    import("@tauri-apps/api/event")
+      .then(({ listen }) => listen("quick-capture", () => setCapture("")))
+      .then((u) => (off = u))
+      .catch(() => {});
+    return () => off?.();
+  }, []);
+
   // atonacht://capture?text=... comes from the Android widget and the share sheet.
   useEffect(() => {
     if (!isTauri()) return;
