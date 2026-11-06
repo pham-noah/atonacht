@@ -5,6 +5,7 @@ import { BackBar, Icon, PageHead } from "./common";
 import { isAndroidApp, isMobileApp } from "../lib/platform";
 import { AppearancePanel, DailyPanel, EditorPanel, FilesPanel, InterfacePanel, PrivacyPanel, RemindersPanel, SyncPanel, TasksPanel } from "./SettingsPanels";
 import { AboutPanel } from "./AboutPanel";
+import { Diagnostics } from "./Diagnostics";
 import { APP_VERSION } from "../lib/update";
 
 const SECTIONS: [string, string, string, () => ReactNode][] = [
@@ -18,6 +19,7 @@ const SECTIONS: [string, string, string, () => ReactNode][] = [
   ["files", "Files & backup", "Export and restore", () => <FilesPanel />],
   ["privacy", "Privacy & lock", "App lock", () => <PrivacyPanel available={isMobileApp()} android={isAndroidApp()} />],
   ["about", "About", "Version, updates, licences", () => <AboutPanel />],
+  ["diagnostics", "Diagnostics", "Version, folder, last error, copy for a bug report", () => <Diagnostics />],
 ];
 
 export function Settings() {

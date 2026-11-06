@@ -13,7 +13,8 @@ export type Route =
   | { name: "weekly" }
   | { name: "library" }
   | { name: "trash" }
-  | { name: "update" };
+  | { name: "update" }
+  | { name: "diagnostics" };
 
 interface Nav {
   route: Route;

@@ -8,6 +8,7 @@ import { useAndroidBridge } from "./useAndroidBridge";
 import { preloadWhenIdle } from "./lib/preload";
 import { LockScreen } from "./ui/LockScreen";
 import { Update } from "./ui/Update";
+import { Diagnostics } from "./ui/Diagnostics";
 const Palette = lazy(() => import("./ui/Palette").then((m) => ({ default: m.Palette })));
 import { useWide } from "./useWide";
 import { useKeyboard } from "./useKeyboard";
@@ -36,7 +37,7 @@ const Trash = lazy(() => import("./ui/Trash").then((m) => ({ default: m.Trash })
 const Weekly = lazy(() => import("./ui/Weekly").then((m) => ({ default: m.Weekly })));
 
 const TAB_LABELS: Record<string, string> = { home: "Home", tasks: "Tasks", board: "Board", notes: "Notes", calendar: "Calendar" };
-const FULLSCREEN = ["editor", "settings", "conflicts", "weekly", "library", "trash", "update"];
+const FULLSCREEN = ["editor", "settings", "conflicts", "weekly", "library", "trash", "update", "diagnostics"];
 
 function Screen({ route }: { route: Route }) {
   switch (route.name) {
@@ -51,6 +52,7 @@ function Screen({ route }: { route: Route }) {
     case "weekly": return <Weekly />;
     case "library": return <Library />;
     case "update": return <Update />;
+    case "diagnostics": return <Diagnostics />;
     case "trash": return <Trash />;
   }
 }

@@ -159,6 +159,11 @@ Syncthing, and macOS/Linux runtime.
 
 ## Release
 
+- **APK size**: a universal APK carries a Rust `libatonacht_lib.so` for every ABI — four of them made a 94 MB download.
+  Builds are split per ABI instead (~13 MB each), and release builds are stripped with thin LTO (`[profile.release]` in
+  `src-tauri/Cargo.toml`), which took the arm64 APK from 28 MB to 13 MB.
+
+
 - **Licence**: Apache-2.0 (`LICENSE`). Bundled fonts are SIL OFL 1.1 (`licences/`); libraries are listed in
   `THIRD-PARTY.md`.
 - **Signing**: the release key is `Atonacht-keys/` (git-ignored, never committed). `scripts/sign-release.sh` signs an APK

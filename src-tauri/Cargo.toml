@@ -36,3 +36,12 @@ tauri-plugin-biometric = "2"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
+
+# Release builds ship inside an APK: symbols and unused code are weight the phone pays for. LTO plus stripping takes a
+# large slice off libatonacht_lib.so, which is most of the install.
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+opt-level = "s"
