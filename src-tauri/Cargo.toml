@@ -47,5 +47,8 @@ tokio = { version = "1", features = ["rt", "macros"] }
 lto = "thin"
 codegen-units = 1
 panic = "abort"
-strip = "symbols"
+# "symbols" removes the symbol table, and Tauri's Android gradle plugin reads it to check the library exports its
+# runtime entry points - so the Android build failed with "does not include required runtime symbols". Debug info is the
+# bulk of the weight; the table stays.
+strip = "debuginfo"
 opt-level = "s"
