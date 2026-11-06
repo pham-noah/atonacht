@@ -43,4 +43,7 @@ export interface NotesFs {
   watch?(root: string, onChange: () => void): Promise<() => void>;
   /** How often to look for changes made by a sync app. */
   pollMs?: number;
+  /** Attachments: bytes in, bytes out. Phones write them through SAF, the desktop through Rust. */
+  writeBytes?(root: string, path: string, data: Uint8Array): Promise<void>;
+  readBytes?(root: string, path: string): Promise<Uint8Array>;
 }

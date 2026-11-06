@@ -68,6 +68,24 @@ export function createMemFs(seed?: Store, persist = false): NotesFs {
       save();
       return mtime;
     },
+    // the browser demo has no files, so an attachment is kept as text: a data URL the preview can show
+    writeBytes: async (_r, path, data) => {
+      let bin = "";
+      for (let i = 0; i < data.length; i += 0x8000) bin += String.fromCharCode(...data.subarray(i, i + 0x8000));
+      const mime = /\.png$/i.test(path) ? "image/png" : /\.gif$/i.test(path) ? "image/gif" : /\.webp$/i.test(path) ? "image/webp" : "image/jpeg";
+      store.files[path] = { content: `data:${mime};base64,${btoa(bin)}`, mtime: Date.now() };
+      addDirs(path);
+      save();
+    },
+    readBytes: async (_r, path) => {
+      const f = store.files[path];
+      if (!f) throw new Error(`Not found: ${path}`);
+      const b64 = f.content.startsWith("data:") ? f.content.slice(f.content.indexOf(",") + 1) : btoa(f.content);
+      const raw = atob(b64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    },
     mkdir: async (_r, path) => {
       if (!store.dirs.includes(path)) store.dirs.push(path);
       save();

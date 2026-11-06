@@ -7,6 +7,8 @@ import { useStore } from "../store";
 import { isPinned, setPinned } from "../lib/frontmatter";
 import { usePrefs } from "../prefs";
 import { buildLinks } from "../lib/backlinks";
+import { attachmentMarkdown, attachmentName, attachmentPath, mimeOf } from "../lib/attachments";
+import { fs } from "../lib/backend";
 import { noteTitle } from "../lib/markdown";
 import { BackBar, Icon, RenameNoteDialog } from "./common";
 import { LiveEditor, LiveHandle } from "./LiveEditor";
@@ -14,7 +16,7 @@ import { LiveEditor, LiveHandle } from "./LiveEditor";
 const FONTS = { sans: "Inter, system-ui, sans-serif", serif: "Fraunces, Georgia, serif", mono: "ui-monospace, SFMono-Regular, Menlo, monospace" };
 
 export function Editor({ path }: { path: string }) {
-  const { all: notes, save, remove, conflicts } = useStore();
+  const { all: notes, save, remove, conflicts, root } = useStore();
   const { go, back, replace } = useNav();
   const [renaming, setRenaming] = useState(false);
   const stored = notes[path];
@@ -61,6 +63,51 @@ export function Editor({ path }: { path: string }) {
   // Rendering the preview costs ~40 ms on a 20,000-line note, so it only happens when the preview is what you are
   // looking at: while typing in the editor there is nothing to show it in.
   const blocks = useMemo(() => (mode === "preview" ? renderBlocks(text) : []), [text, mode]);
+  const filePick = useRef<HTMLInputElement>(null);
+
+  /** An image from the picker or the clipboard goes into Attachments/ and a link to it is written into the note. */
+  const addAttachment = async (files: FileList | File[] | null) => {
+    if (!files || !files.length || !fs.writeBytes) return;
+    const parts: string[] = [];
+    for (const file of Array.from(files)) {
+      const path = attachmentPath(attachmentName(file.name || "pasted.png"));
+      try {
+        await fs.writeBytes(root, path, new Uint8Array(await file.arrayBuffer()));
+        parts.push(attachmentMarkdown(path, file.name));
+      } catch (e) {
+        setState("error");
+        console.warn("attachment failed", e);
+      }
+    }
+    if (parts.length) change(`${text.replace(/\s*$/, "")}${text.trim() ? "\n" : ""}${parts.join("\n")}\n`);
+  };
+  // The preview cannot load Attachments/x.png by URL: the bytes are read through the same folder the notes use, and
+  // shown as a blob URL that is released when the note closes.
+  useEffect(() => {
+    if (mode !== "preview" || !fs.readBytes) return;
+    let cancelled = false;
+    const made: string[] = [];
+    void (async () => {
+      const imgs = Array.from(document.querySelectorAll<HTMLImageElement>("img[data-attach]"));
+      for (const img of imgs) {
+        const p = img.dataset.attach;
+        if (!p) continue;
+        try {
+          const bytes = await fs.readBytes!(root, p);
+          const url = URL.createObjectURL(new Blob([new Uint8Array(bytes).buffer], { type: mimeOf(p) }));
+          made.push(url);
+          if (!cancelled) img.src = url;
+        } catch {
+          // a missing image keeps its alt text, which is what the note says anyway
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+      made.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [blocks, mode, root]);
+
   const hasConflict = conflicts.some((c) => c.original === path);
   const [lineEdit, setLineEdit] = useState<{ from: number; to: number } | null>(null);
 
@@ -126,8 +173,26 @@ export function Editor({ path }: { path: string }) {
           <Icon name="alert" size={20} /><span className="grow">This note has a sync conflict</span><span className="chip">Review</span>
         </button>
       )}
+      <input
+        ref={filePick}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        aria-label="Choose a picture to attach"
+        onChange={(e) => { void addAttachment(e.target.files); e.target.value = ""; }}
+      />
       {mode === "edit" ? (
-        <div className="page" style={{ ["--ed-font" as string]: FONTS[prefs.editorFont], ["--ed-size" as string]: `${prefs.editorSize}px`, ["--ed-lh" as string]: prefs.lineHeight }}>
+        <div
+          className="page"
+          onPaste={(e) => {
+            const files = Array.from(e.clipboardData.files ?? []);
+            if (files.length) {
+              e.preventDefault();
+              void addAttachment(files);
+            }
+          }}
+          style={{ ["--ed-font" as string]: FONTS[prefs.editorFont], ["--ed-size" as string]: `${prefs.editorSize}px`, ["--ed-lh" as string]: prefs.lineHeight }}>
           <LiveEditor ref={area} value={text} onChange={change} onToggle={toggleLine} onLink={openLink} live={prefs.livePreview} spellcheck={prefs.spellcheck} />
           {text.trim() === "" && <p className="muted small emptyhint">Start writing. Markdown works here: <span className="mono">#</span> for a heading, <span className="mono">- [ ]</span> for a task, <span className="mono">@due(2026-11-05)</span> for a date.</p>}
         </div>
@@ -148,6 +213,7 @@ export function Editor({ path }: { path: string }) {
         <button onClick={() => area.current?.wrap(` @due(${addDays(today(), 1)})`)} aria-label="Due tomorrow"><Icon name="calendar" size={18} /></button>
         <button onClick={() => area.current?.wrap("#")} aria-label="Tag">#</button>
         <button onClick={() => area.current?.wrap("[[", "]]")} aria-label="Link note"><Icon name="link" size={18} /></button>
+        <button onClick={() => filePick.current?.click()} aria-label="Attach a picture">📎</button>
         <span className="sep" />
         <button className="danger" onClick={() => { if (confirm("Move this note to the trash?")) remove(path).then(back); }} aria-label="Delete note"><Icon name="x" size={18} /></button>
       </div>

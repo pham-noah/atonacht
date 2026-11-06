@@ -8,6 +8,8 @@ import { liveMarkdown } from "./live";
 export interface LiveHandle {
   wrap: (before: string, after?: string) => void;
   lineStart: (prefix: string) => void;
+  /** Inserts text at the caret and leaves the caret after it — used when an attachment is added. */
+  insert: (text: string) => void;
   focus: () => void;
 }
 interface Props {
@@ -78,6 +80,12 @@ export const LiveEditor = forwardRef<LiveHandle, Props>(function LiveEditor(prop
       const v = view.current!;
       const { from, to } = v.state.selection.main;
       v.dispatch({ changes: { from, to, insert: before + v.state.sliceDoc(from, to) + after }, selection: { anchor: from + before.length, head: to + before.length } });
+      v.focus();
+    },
+    insert(text) {
+      const v = view.current!;
+      const { from, to } = v.state.selection.main;
+      v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
       v.focus();
     },
     lineStart(prefix) {

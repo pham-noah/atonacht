@@ -24,6 +24,7 @@ tauri-plugin-http = "2"
 tauri-plugin-opener = "2"
 notify = "8"
 # Syncthing status is read straight from Rust: no plugin scope, no browser CORS, works the same on Android.
+base64 = "0.22"
 if-addrs = "0.13"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 

@@ -177,6 +177,18 @@ export const safFs: NotesFs = {
     });
   },
 
+  async writeBytes(root, path, data) {
+    safePath(path);
+    const existing = await find(root, path).catch(() => null);
+    const uri = existing ?? await A.createNewFile(base(root), path, null);
+    await A.writeFile(uri, data);
+    cacheFor(root).set(path, uri);
+  },
+
+  async readBytes(root, path) {
+    return withUri(root, safePath(path), (u) => A.readFile(u));
+  },
+
   async mkdir(root, path) {
     await A.createDir(base(root), safePath(path));
   },

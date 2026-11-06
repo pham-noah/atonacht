@@ -195,6 +195,18 @@ fn purge_note(root: String, path: String) -> Result<(), String> {
     notes_fs::purge_note(&root, &path)
 }
 
+/// Writes an attachment (image) from base64 — used by the "attach" button and pasting into a note.
+#[tauri::command]
+fn write_attachment(root: String, path: String, base64: String) -> Result<u64, String> {
+    notes_fs::write_bytes(&root, &path, &base64)
+}
+
+/// Reads an attachment back as base64 so the preview can render it without a file:// URL.
+#[tauri::command]
+fn read_attachment(root: String, path: String) -> Result<String, String> {
+    notes_fs::read_bytes(&root, &path)
+}
+
 /// Android only (a no-op elsewhere): pushes today's tasks to the home screen widget.
 #[tauri::command]
 fn set_widget_tasks(json: String) -> Result<(), String> {
@@ -307,7 +319,9 @@ pub fn run() {
             set_privacy_flags,
             sync_get,
             local_ips,
-            sync_selftest
+            sync_selftest,
+            write_attachment,
+            read_attachment
         ]);
 
     // Fingerprint / face unlock exists on phones only.

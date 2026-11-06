@@ -127,6 +127,33 @@ pub fn write_note(root: &str, rel: &str, content: &str) -> Result<u64, String> {
     Ok(mtime_ms(&fs::metadata(&target).map_err(|e| e.to_string())?))
 }
 
+/// Binary attachments (an image pasted into a note) go through the same temporary-file dance as notes, so a sync app
+/// never copies half a picture. Base64 keeps the IPC payload a string.
+pub fn write_bytes(root: &str, rel: &str, base64_data: &str) -> Result<u64, String> {
+    use base64::Engine;
+    let target = safe_join(root, rel)?;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(base64_data.as_bytes())
+        .map_err(|e| format!("That is not valid base64: {e}"))?;
+    let dir = target.parent().ok_or("Bad path")?;
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let name = target.file_name().unwrap().to_string_lossy().into_owned();
+    let stamp = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+    let tmp = dir.join(format!(".{name}.{stamp}-{:?}.atonacht-tmp", std::thread::current().id()));
+    let mut f = fs::File::create(&tmp).map_err(|e| format!("Could not write {rel}: {e}"))?;
+    f.write_all(&bytes).and_then(|_| f.sync_all()).map_err(|e| e.to_string())?;
+    drop(f);
+    fs::rename(&tmp, &target).map_err(|e| format!("Could not save {rel}: {e}"))?;
+    Ok(mtime_ms(&fs::metadata(&target).map_err(|e| e.to_string())?))
+}
+
+/// The bytes of an attachment, as base64, for showing it in the web view.
+pub fn read_bytes(root: &str, rel: &str) -> Result<String, String> {
+    use base64::Engine;
+    let bytes = fs::read(safe_join(root, rel)?).map_err(|e| format!("Could not read {rel}: {e}"))?;
+    Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
+}
+
 pub fn make_dir(root: &str, rel: &str) -> Result<(), String> {
     fs::create_dir_all(safe_join(root, rel)?).map_err(|e| format!("Could not create {rel}: {e}"))
 }

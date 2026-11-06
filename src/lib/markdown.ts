@@ -10,6 +10,9 @@ function inline(raw: string): string {
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
   s = s.replace(/\[\[([^\]]+)\]\]/g, '<a class="wl" data-link="$1">$1</a>');
+  // an image in the folder: rendered by the editor once it has read the bytes (see attachSrc)
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt: string, src: string) =>
+    `<img class="attach" data-attach="${src}" alt="${alt}" />`);
   s = s.replace(/@due\((\d{4}-\d{2}-\d{2})\)/g, (_, d) => `<span class="chip">due ${shortDate(d)}</span>`);
   s = s.replace(/@repeat\(([^)]+)\)/g, '<span class="chip">↻ $1</span>');
   s = s.replace(/(^|\s)!(high|med|low)\b/g, '$1<span class="chip hi">$2</span>');
