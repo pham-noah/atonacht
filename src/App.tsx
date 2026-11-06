@@ -5,11 +5,13 @@ import { useAppLock } from "./useAppLock";
 import { isAndroidApp, isMobileApp } from "./lib/platform";
 import { invoke } from "@tauri-apps/api/core";
 import { useAndroidBridge } from "./useAndroidBridge";
+import { useGithubSync } from "./useGithubSync";
 import { preloadWhenIdle } from "./lib/preload";
 import { LockScreen } from "./ui/LockScreen";
 import { Update } from "./ui/Update";
 import { Diagnostics } from "./ui/Diagnostics";
 import { Tags } from "./ui/Tags";
+import { History } from "./ui/History";
 const Palette = lazy(() => import("./ui/Palette").then((m) => ({ default: m.Palette })));
 import { useWide } from "./useWide";
 import { useKeyboard } from "./useKeyboard";
@@ -38,7 +40,7 @@ const Trash = lazy(() => import("./ui/Trash").then((m) => ({ default: m.Trash })
 const Weekly = lazy(() => import("./ui/Weekly").then((m) => ({ default: m.Weekly })));
 
 const TAB_LABELS: Record<string, string> = { home: "Home", tasks: "Tasks", board: "Board", notes: "Notes", calendar: "Calendar" };
-const FULLSCREEN = ["editor", "settings", "conflicts", "weekly", "library", "trash", "update", "diagnostics", "tags"];
+const FULLSCREEN = ["editor", "settings", "conflicts", "weekly", "library", "trash", "update", "diagnostics", "tags", "history"];
 
 function Screen({ route }: { route: Route }) {
   switch (route.name) {
@@ -55,6 +57,7 @@ function Screen({ route }: { route: Route }) {
     case "update": return <Update />;
     case "diagnostics": return <Diagnostics />;
     case "tags": return <Tags />;
+    case "history": return <History path={route.path} />;
     case "trash": return <Trash />;
   }
 }
@@ -62,6 +65,7 @@ function Screen({ route }: { route: Route }) {
 function Sidebar({ open, close }: { open: boolean; close: () => void }) {
   const { route, go } = useNav();
   const { tasks, dirs, notes, conflicts, error, root, pinned } = useStore();
+  useGithubSync();
   const [newFolder, setNewFolder] = useState(false);
   const [q, setQ] = useState("");
   const nav = (r: Route) => { go(r); close(); };

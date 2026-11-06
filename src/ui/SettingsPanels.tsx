@@ -11,6 +11,7 @@ import { openExternal } from "../lib/update";
 import { syncthingFetcher } from "../lib/syncthingFetch";
 import { githubFetcher } from "../lib/githubFetch";
 import { parseRepo, pullNotes, pushNotes } from "../lib/github";
+import { describeOutcome, syncWithGitHub } from "../lib/githubSync";
 import { Choice, Group, Row, Slider, TimeField, Toggle } from "./SettingsParts";
 
 const THEMES: [Theme, string, string][] = [
@@ -318,20 +319,23 @@ function shortAgo(iso: string): string {
 function GitHubSetup() {
   const { prefs, setPrefs } = usePrefs();
   const { all, save } = useStore();
-  const [busy, setBusy] = useState<"" | "pull" | "push" | "test">("");
+  const [busy, setBusy] = useState<"" | "sync" | "pull" | "push" | "test">("");
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const repo = parseRepo(prefs.githubRepo);
   const ready = !!repo && !!prefs.githubToken;
 
-  const run = async (what: "pull" | "push" | "test") => {
+  const run = async (what: "sync" | "pull" | "push" | "test") => {
     if (!repo) { setErr("That is not a repository. Write owner/repo, for example pham-noah/notes."); return; }
     setBusy(what);
     setErr("");
     setMsg("");
     try {
       const f = await githubFetcher();
-      if (what === "push") {
+      if (what === "sync") {
+        const out = await syncWithGitHub({ repo, branch: prefs.githubBranch, token: prefs.githubToken, notes: all, save, fetcher: f });
+        setMsg(describeOutcome(out));
+      } else if (what === "push") {
         const out = await pushNotes(repo, prefs.githubBranch, prefs.githubToken, all, f);
         setMsg(out ? `Committed ${out.files} note${out.files === 1 ? "" : "s"} as ${out.commit.slice(0, 7)}.` : "Nothing to commit — the repository already matches this folder.");
       } else {

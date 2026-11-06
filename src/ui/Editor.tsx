@@ -105,6 +105,9 @@ export function Editor({ path }: { path: string }) {
         label={text.match(/^#\s+(.+)$/m)?.[1]?.trim() || path.replace(/\.md$/, "").split("/").slice(-1)[0]}
         sub={path.split("/").slice(0, -1).join(" / ")}
         right={<>
+          {prefs.githubRepo && prefs.githubToken && (
+            <button className="ib" aria-label="Note history" onClick={() => go({ name: "history", path })}><Icon name="clock" /></button>
+          )}
           <button className="ib" aria-label="Rename or move note" onClick={() => setRenaming(true)}><Icon name="edit" /></button>
           <button className="ib" aria-label={isPinned(text) ? "Unpin note" : "Pin note"} aria-pressed={isPinned(text)} onClick={() => change(setPinned(text, !isPinned(text)))}><Icon name="pin" /></button>
           <button

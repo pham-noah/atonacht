@@ -15,7 +15,8 @@ export type Route =
   | { name: "trash" }
   | { name: "update" }
   | { name: "diagnostics" }
-  | { name: "tags" };
+  | { name: "tags" }
+  | { name: "history"; path: string };
 
 interface Nav {
   route: Route;
