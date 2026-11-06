@@ -245,7 +245,6 @@ fn unwatch_notes(state: State<WatchState>) {
     }
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 /// Brings the main window up and asks the frontend to open the capture sheet.
 #[cfg(desktop)]
 fn show_and_capture(app: &tauri::AppHandle) {
@@ -290,6 +289,7 @@ fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
         .manage(WatchState::default())

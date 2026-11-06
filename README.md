@@ -175,7 +175,7 @@ Syncthing, and macOS/Linux runtime.
 ## Release
 
 - **APK size**: a universal APK carries a Rust `libatonacht_lib.so` for every ABI — four of them made a 94 MB download.
-  Builds are split per ABI instead (~13 MB each), and release builds are stripped with thin LTO (`[profile.release]` in
+  Builds are split per ABI instead (~21 MB each), and release builds are stripped with thin LTO (`[profile.release]` in
   `src-tauri/Cargo.toml`), which took the arm64 APK from 28 MB to 13 MB.
 
 
