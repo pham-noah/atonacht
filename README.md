@@ -39,6 +39,14 @@ adds a line, Esc cancels). Folders, search, pinned notes (`pinned: true` front m
 templates in `Templates/` (`{{title}}`, `{{date}}`, `{{long_date}}`), and a Trash that empties itself after 7, 30 or 90
 days — the deletion time lives in the file name, so it survives syncing.
 
+**Attachments** — paste a picture into a note, or use the paperclip: the bytes go into `Attachments/` and a link is
+written at the cursor. The preview reads them back through the folder, so it works the same on the desktop (Rust), on
+Android (SAF) and in the browser demo. Pictures outside the folder are left as ordinary Markdown images.
+
+**Links and tags** — every note shows what it links to and what points at it; a `[[link]]` to a name no note has is shown
+as missing rather than dropped. Tags have their own screen with counts, and search understands `tag:`, `in:`, `due:`,
+`is:` and `has:`.
+
 **Tasks** live in the note text. Every checkbox in every note appears in All tasks, grouped Overdue / Today / This week /
 Later / No date, and checking one writes back to its source note. Repeats: `daily`, `weekdays`, `weekly`, `weekly:thu`,
 `monthly`, `monthly:29`, `yearly`, counted from the due date or the completion date. Home shows today's note with quick
@@ -61,7 +69,9 @@ move each open one to next week, someday or drop; saves a summary note in `Weekl
 without going to `.trash`. Settings → Sync walks through the setup in three steps and can read Syncthing's own status
 (connected devices, folder progress) with an API key.
 
-**Reminders** — due-date reminders at a time you choose, plus a daily-plan and weekly-review nudge. On Android they are
+**Reminders** — due-date reminders at a time you choose, plus a daily-plan and weekly-review nudge. A task can name its
+own time with `@at(18:30)`, and quiet hours (22:00–07:00 by default) move anything that would land inside them to the
+morning instead of dropping it. On Android they are
 handed to the system, so they fire with the app closed; on desktop they fire while it runs.
 
 **On Android** — system folder picker (no "all files" permission), a Today widget and a quick-add widget, "Add to
@@ -69,7 +79,12 @@ Atonacht" in the share sheet, app lock (fingerprint, face or screen lock), hide 
 with the status and navigation bars hidden, and the back gesture: it closes what is open, steps back a screen, returns to
 Home, then leaves the app. Widgets cannot tick tasks off — tapping one opens the app.
 
-**Elsewhere** — command palette (Ctrl/Cmd + K), ZIP backup and restore (existing notes are never overwritten), and About
+**GitHub as a second remote** — repository, branch and a fine-grained token in Settings → Sync. Sync fetches, reconciles
+and commits (one commit per sync, not one per note) and runs on start and every ten minutes when GitHub is the chosen
+remote; when both sides changed the same note the remote copy is kept beside yours. A note's commits are on their own
+screen, with the old text and a Restore button.
+
+**Elsewhere** — Diagnostics (version, folder, last error, copy for a bug report), command palette (Ctrl/Cmd + K), ZIP backup and restore (existing notes are never overwritten), and About
 with the version, the licence list, an update check against GitHub releases and a pre-filled "Report a problem" issue.
 
 ## Note format
@@ -155,7 +170,7 @@ Syncthing, and macOS/Linux runtime.
 - Android checks for changes every 8 seconds; only desktop has a real file watcher.
 - "Hide content in recent apps" needs Android 13+; older versions fall back to blocking screenshots.
 - Notes deleted before this version carry no deletion time; their clock starts the first time the app sees them.
-- No quiet hours, no per-task reminder times (date only), no iOS build.
+- No iOS build.
 
 ## Release
 
