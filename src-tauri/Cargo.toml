@@ -1,6 +1,6 @@
 [package]
 name = "atonacht"
-version = "0.1.5"
+version = "0.2.0"
 description = "Daily notes and to-dos as plain Markdown files"
 edition = "2021"
 
