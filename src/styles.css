@@ -296,6 +296,13 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;animation:pulse 2.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
+/* links under a note: what points here, and what this points at */
+.links{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.pill.missing{border-style:dashed;color:var(--muted)}
+.queryhint{margin:-4px 0 2px}
+.tagrow{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:10px 0;color:var(--txt);display:flex;align-items:center;gap:10px}
+.tagrow:first-child{border-top:0}
+
 /* diagnostics: the value column can be long, so it truncates rather than pushing the row apart */
 .diagval{max-width:56%;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .diagraw summary{cursor:pointer;color:var(--muted)}

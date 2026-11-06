@@ -6,6 +6,8 @@ import { useNav } from "../nav";
 import { useStore } from "../store";
 import { isPinned, setPinned } from "../lib/frontmatter";
 import { usePrefs } from "../prefs";
+import { buildLinks } from "../lib/backlinks";
+import { noteTitle } from "../lib/markdown";
 import { BackBar, Icon, RenameNoteDialog } from "./common";
 import { LiveEditor, LiveHandle } from "./LiveEditor";
 
@@ -146,6 +148,7 @@ export function Editor({ path }: { path: string }) {
         <span className="sep" />
         <button className="danger" onClick={() => { if (confirm("Move this note to the trash?")) remove(path).then(back); }} aria-label="Delete note"><Icon name="x" size={18} /></button>
       </div>
+      <Links path={path} notes={notes} onOpen={(to) => flush().then(() => go({ name: "editor", path: to }))} />
       {renaming && <RenameNoteDialog path={path} onClose={() => setRenaming(false)} onDone={(to) => flush().then(() => replace({ name: "editor", path: to }))} />}
       <div className={`muted small status${state === "saved" ? " saved" : ""}`}>{state === "saved" ? "Saved" : state === "saving" ? "Saving…" : "Could not save. Retrying on next edit."}</div>
     </div>
@@ -197,6 +200,58 @@ function LineEditor({ initial, hint, onSave, onCancel }: { initial: string; hint
         }}
       />
       <span className="muted small">{hint}</span>
+    </div>
+  );
+}
+
+/**
+ * What points here and what this note points at.
+ *
+ * A `[[link]]` is only useful if you can walk back along it; this is the walk. A link to a name no note has is shown as
+ * missing rather than dropped, because that is usually how the note you meant to write gets written.
+ */
+function Links({ path, notes, onOpen }: { path: string; notes: Record<string, string>; onOpen: (to: string) => void }) {
+  const graph = useMemo(() => {
+    const titles: Record<string, string> = {};
+    for (const p of Object.keys(notes)) titles[p] = noteTitle(p, notes[p]);
+    return buildLinks(notes, titles);
+  }, [notes]);
+  const byName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of Object.keys(notes)) {
+      map.set(noteTitle(p, notes[p]).trim().toLowerCase(), p);
+      map.set(p.split("/").pop()!.replace(/\.md$/i, "").toLowerCase(), p);
+    }
+    return map;
+  }, [notes]);
+
+  const here = graph.incoming[path] ?? [];
+  const out = graph.outgoing[path] ?? [];
+  if (here.length === 0 && out.length === 0) return null;
+
+  return (
+    <div className="links">
+      {out.length > 0 && (
+        <>
+          <div className="cap">Links from this note</div>
+          <div className="pills">
+            {out.map((name) => {
+              const to = byName.get(name.trim().toLowerCase());
+              return to
+                ? <button key={name} className="pill" onClick={() => onOpen(to)}>{name}</button>
+                : <span key={name} className="pill missing" title="No note has this name">{name}</span>;
+            })}
+          </div>
+        </>
+      )}
+      {here.length > 0 && (
+        <>
+          <div className="cap">Linked from</div>
+          <div className="pills">
+            {here.map((p) => <button key={p} className="pill" onClick={() => onOpen(p)}>{p.replace(/\.md$/i, "")}</button>)}
+          </div>
+        </>
+      )}
     </div>
   );
 }

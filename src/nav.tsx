@@ -14,7 +14,8 @@ export type Route =
   | { name: "library" }
   | { name: "trash" }
   | { name: "update" }
-  | { name: "diagnostics" };
+  | { name: "diagnostics" }
+  | { name: "tags" };
 
 interface Nav {
   route: Route;

@@ -4,6 +4,7 @@ import { today } from "../lib/dates";
 import { fillTemplate } from "../lib/templates";
 import { noteTitle, snippet } from "../lib/markdown";
 import { plural } from "../lib/plural";
+import { describeQuery, noteMatches, parseQuery } from "../lib/search";
 import { useNav } from "../nav";
 import { useStore } from "../store";
 import { BackBar, Modal, PageHead } from "./common";
@@ -29,14 +30,16 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
   const [name, setName] = useState("");
   const [where, setWhere] = useState(folder ?? "");
   const [shown, setShown] = useState(PAGE);
-  const needle = q.trim().toLowerCase();
+  // tag:x, in:folder, due:overdue, is:open, has:task narrow the list; everything else is still plain text.
+  const parsed = useMemo(() => parseQuery(q), [q]);
+  const needle = parsed.text.toLowerCase();
   // Building this list scans every note's text, so it only happens when the notes or the search actually change.
   const list = useMemo(
     () => Object.entries(notes)
       .filter(([p]) => !folder || p.startsWith(folder + "/"))
-      .filter(([p, c]) => !needle || p.toLowerCase().includes(needle) || c.toLowerCase().includes(needle))
+      .filter(([p, c]) => noteMatches(parsed, p, c, tasks, today()))
       .sort(([a], [b]) => (mtimes[b] ?? 0) - (mtimes[a] ?? 0)),
-    [notes, mtimes, folder, needle],
+    [notes, mtimes, folder, parsed, tasks],
   );
   // A new search or folder starts from the top again.
   useEffect(() => setShown(PAGE), [needle, folder]);
@@ -60,7 +63,12 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
     <>
       {folder && <BackBar label="Folders" />}
       <PageHead sub={folder ? `${plural(list.length, "note")} · ${plural(open, "open task")}` : `${plural(Object.keys(notes).length, "note")} in ${plural(folders.length, "folder")}`} title={folder ?? "Notes"} right={<>{folder && <><button className="pill" onClick={() => { setNewName(folder); setOpErr(""); setFolderOp("rename"); }}>Rename</button><button className="pill" onClick={() => { setOpErr(""); setFolderOp("delete"); }}>Delete</button></>}<button className="btn" onClick={() => setCreating(true)}>New note</button></>} />
-      {!wide && <input className="in" type="search" placeholder="Search notes" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />}
+      {!wide && (
+        <>
+          <input className="in" type="search" placeholder="Search notes — tag:thesis, due:overdue" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />
+          {parsed.filtered && <p className="muted small queryhint">{describeQuery(parsed)} · {list.length} note{list.length === 1 ? "" : "s"}</p>}
+        </>
+      )}
       {!folder && (
         <div className="pills scrollrow">
           <button className="pill on">All</button>
