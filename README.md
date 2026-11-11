@@ -3,6 +3,8 @@
 Daily notes and to-dos kept as plain Markdown files, on your own devices. One Tauri 2 + React codebase for desktop
 (Windows, macOS, Linux) and Android. Syncthing does the syncing, so there is no server and your notes are never locked in.
 
+[Discord](https://discord.gg/tz42eZyNtD) — questions, bug reports and release news.
+
 ## Screenshots
 
 **Phone, Glass theme** — Home, All tasks, a task mid-swipe, the board, the calendar, notes, the editor, Syncthing setup:
