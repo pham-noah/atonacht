@@ -5,7 +5,7 @@ import { addTask, editTask, groupTasks, parseTasks, toggleTask } from "../lib/ta
 import { applyCarryOver, dailyPath, dailyTemplate, findCarryOver } from "../lib/daily";
 import { conflictCopyPath, parseConflict } from "../lib/conflicts";
 import { diffLines } from "../lib/diff";
-import { noteTitle, renderMarkdown } from "../lib/markdown";
+import { matchSnippet, noteTitle, renderBlocks, renderMarkdown, snippet } from "../lib/markdown";
 import { createMemFs } from "../lib/memFs";
 
 describe("repeat rules", () => {
@@ -97,6 +97,75 @@ describe("markdown", () => {
     expect(html).toContain("<strong>it</strong>");
     expect(html).toContain("due 30 Oct");
     expect(noteTitle("A/b.md", "no heading")).toBe("b");
+  });
+});
+
+describe("markdown blocks the preview used to flatten", () => {
+  it("renders a blockquote, an ordered list and a rule as themselves", () => {
+    const note = "# Plan\n\n> ship it\n> and then some\n\n1. first\n2. second\n\n---\n";
+    const blocks = renderBlocks(note);
+    expect(blocks.find((b) => b.html.startsWith("<blockquote>"))).toEqual({
+      html: "<blockquote>ship it and then some</blockquote>",
+      from: 2,
+      to: 3, // both lines, so double-click-to-edit rewrites the whole quote
+    });
+    expect(renderMarkdown(note)).toContain('<div class="md-li md-ol" data-line="5" style="margin-left:0px"><span class="num">1.</span>first</div>');
+    expect(renderMarkdown(note)).toContain('<span class="num">2.</span>second');
+    expect(renderMarkdown(note)).toContain('<hr data-line="8"');
+  });
+
+  it("renders a pipe table with its alignment, and keeps inline markup in the cells", () => {
+    const note = "| Task | Due |\n|:--|--:|\n| Pay **rent** | 1 Dec |\n| Buy milk | — |\n";
+    const blocks = renderBlocks(note);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].from).toBe(0);
+    expect(blocks[0].to).toBe(3); // the whole table, not just the header
+    const html = blocks[0].html;
+    expect(html).toContain('<th style="text-align:left">Task</th>');
+    expect(html).toContain('<th style="text-align:right">Due</th>');
+    expect(html).toContain('<td style="text-align:left">Pay <strong>rent</strong></td>');
+    expect(html).toContain('<td style="text-align:right">1 Dec</td>');
+  });
+
+  it("leaves a line with a pipe that is not a table alone", () => {
+    expect(renderMarkdown("a | b\n\nnext")).toBe("<p>a | b</p>\n<p>next</p>");
+    expect(renderMarkdown("a | b\n---")).toContain("<p>a | b</p>"); // --- under text is not a table's header rule
+  });
+
+  it("does not read a note's front matter as a rule or a table", () => {
+    const html = renderMarkdown("---\npinned: true\n---\n# Hi\n");
+    expect(html).toBe("<h1>Hi</h1>");
+    expect(html).not.toContain("<hr");
+  });
+
+  it("keeps a quote and a paragraph from swallowing each other", () => {
+    const html = renderMarkdown("> quoted\n\nplain\n> quoted again\n");
+    expect(html).toBe("<blockquote>quoted</blockquote>\n<p>plain</p>\n<blockquote>quoted again</blockquote>");
+  });
+});
+
+describe("the line a search hit is on", () => {
+  const note = [...Array.from({ length: 39 }, (_, i) => `line ${i + 1}`), "- [ ] Pay rent by Friday"].join("\n");
+
+  it("finds the matching line, not the opening one, and marks the term", () => {
+    const hit = matchSnippet(note, "rent")!;
+    expect(hit).toEqual({ before: "- [ ] Pay ", hit: "rent", after: " by Friday" });
+    expect(snippet(note)).not.toContain("rent"); // the opening line says nothing about why it matched
+  });
+
+  it("windows a long line around the hit so the term stays visible", () => {
+    const long = `${"a ".repeat(80)}rent${" b".repeat(80)}`;
+    const hit = matchSnippet(long, "rent", 90)!;
+    expect(hit.hit).toBe("rent");
+    expect(hit.before.startsWith("…")).toBe(true);
+    expect(hit.after.endsWith("…")).toBe(true);
+    expect(hit.before.length + hit.hit.length + hit.after.length).toBeLessThanOrEqual(92);
+  });
+
+  it("says nothing when the term is only in the file name, so the row falls back to the opening line", () => {
+    expect(matchSnippet("# Rent\n\nno mention here\n", "rent")).toEqual({ before: "# ", hit: "Rent", after: "" });
+    expect(matchSnippet("# Other\n\nno mention here\n", "rent")).toBeNull();
+    expect(matchSnippet("# Other\n\nrent is due\n", "  ")).toBeNull();
   });
 });
 

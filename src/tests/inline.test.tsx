@@ -67,6 +67,29 @@ describe("links in the preview", () => {
   });
 });
 
+describe("blocks the preview used to flatten", () => {
+  it("draws a quote, an ordered list, a rule and a table as themselves", async () => {
+    await boot({
+      "Thesis/Rich.md":
+        "# Rich\n\n> Ship it on Friday\n> and tell nobody\n\n1. Draft\n2. Review\n\n---\n\n| Item | Cost |\n|:--|--:|\n| Venue | 200 |\n| Cake | 35 |\n",
+    });
+    fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
+    fireEvent.click(await screen.findByText("Rich", { selector: ".nt" }));
+    await screen.findByRole("button", { name: "Edit" });
+
+    expect(document.querySelector(".preview blockquote")!.textContent).toBe("Ship it on Friday and tell nobody");
+    expect(document.querySelector(".preview hr")).toBeTruthy();
+    const items = [...document.querySelectorAll(".preview .md-ol")];
+    expect(items.map((e) => e.querySelector(".num")!.textContent)).toEqual(["1.", "2."]);
+    expect(items.map((e) => e.textContent)).toEqual(["1.Draft", "2.Review"]);
+    const heads = [...document.querySelectorAll(".preview th")].map((e) => e.textContent);
+    expect(heads).toEqual(["Item", "Cost"]);
+    expect([...document.querySelectorAll(".preview td")].map((e) => e.textContent)).toEqual(["Venue", "200", "Cake", "35"]);
+    // the table is one block, so double-clicking it edits the whole table rather than one cell
+    expect(document.querySelectorAll(".preview .md-table")).toHaveLength(1);
+  });
+});
+
 describe("editing one line in the preview", () => {
   it("opens the source line on double-click and writes just that line back", async () => {
     const original = "# Thesis outline\n\nIntro paragraph.\n\n- [ ] Draft methods @due(2026-11-05)\n- [ ] Email supervisor\n";

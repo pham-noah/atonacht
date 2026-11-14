@@ -37,20 +37,25 @@ Daily notes and to-dos kept as plain Markdown files, on your own devices. One Ta
 **Notes** — the raw Markdown stays on screen on every line (`##`, `- [ ]`, `@due(…)`), with headings sized and
 `@due` / `!high` / `#tag` / `[[links]]` styled in place. Click a task's `- [ ]` to tick it off; Enter continues lists. The
 eye button opens the preview, where **double-clicking a line edits just that line** (Enter writes it back, Shift+Enter
-adds a line, Esc cancels). Folders, search, pinned notes (`pinned: true` front matter, so it syncs), rename/move,
+adds a line, Esc cancels). The preview draws the note as written — headings, checkboxes, bullets, numbered lists,
+`> quotes`, `---` rules and `| pipe | tables |` with their `:--`/`--:` alignment — instead of one grey paragraph. Folders, search, pinned notes (`pinned: true` front matter, so it syncs), rename/move,
 templates in `Templates/` (`{{title}}`, `{{date}}`, `{{long_date}}`), and a Trash that empties itself after 7, 30 or 90
 days — the deletion time lives in the file name, so it survives syncing. Renaming or moving a note rewrites every note
 that pointed at it (`[[old]]`, `[[old|alias]]` and `[[old#heading]]`), and one Undo puts the links and the file name back.
 
 **Attachments** — paste a picture into a note, or use the paperclip: the bytes go into `Attachments/` and a link is
-written at the cursor. The preview reads them back through the folder, so it works the same on the desktop (Rust), on
-Android (SAF) and in the browser demo. Pictures outside the folder are left as ordinary Markdown images.
+written at the cursor. A photo whose long edge is over 2000 px (a 12 MP phone photo is 4032 px wide) is redrawn at
+2000 px, JPEG/WebP quality 0.85, before it is written — 4.1 MB of test photo becomes 0.9 MB — while PNG, GIF, SVG
+and AVIF are stored exactly as they arrived, so transparency survives. The preview reads them back through the folder,
+so it works the same on the desktop (Rust), on Android (SAF) and in the browser demo. Pictures outside the folder are
+left as ordinary Markdown images.
 
 **Links and tags** — every note shows what it links to and what points at it; a `[[link]]` to a name no note has is shown
 as missing rather than dropped, and it opens whether you wrote the file name or the note's title. Ordinary Markdown
 links (`[text](https://…)`) open in your browser — `http`, `https` and `mailto` only, anything else stays literal text —
 and a `[[link]]` can be followed in the live editor too (Ctrl/Cmd-click, since a plain click there has to place the
-cursor). Tags have their own screen with counts, and search understands `tag:`, `in:`, `due:`, `is:` and `has:`.
+cursor). Tags have their own screen with counts, and search understands `tag:`, `in:`, `due:`, `is:` and `has:`. A
+result row shows the line that actually matched, with the term marked, rather than the note's opening line.
 
 **Tasks** live in the note text. Every checkbox in every note appears in All tasks, grouped Overdue / Today / This week /
 Later / No date, and checking one writes back to its source note. Repeats: `daily`, `weekdays`, `weekly`, `weekly:thu`,
@@ -120,7 +125,7 @@ Daily notes are `Daily notes/YYYY-MM-DD.md` (folder configurable). Paths startin
 
 ```bash
 npm install
-npm test                  # 228 unit and UI tests
+npm test                  # 247 unit and UI tests
 npm run dev               # browser demo with sample notes: no real files, no notifications
 npm run tauri dev         # desktop app
 npm run tauri build       # desktop installers
@@ -142,7 +147,7 @@ text to "Add to Atonacht". The widget list refreshes whenever the app is open.
 
 Measured in a build sandbox, not on a phone:
 
-- 88 kB of compressed JavaScript on first load (the `index` chunk: 272 kB raw); the editor, settings, weekly review and
+- 89 kB of compressed JavaScript on first load (the `index` chunk: 274 kB raw); the editor, settings, weekly review and
   ZIP code load on first use.
 - Saving a note in a 5,000-note folder costs about 30 ms afterwards, because only the changed note is parsed again.
 - Task lists and large folders draw 100 rows at a time with "Show more"; styling a 20,000-line note costs about 5 ms per
@@ -163,12 +168,14 @@ android/ scripts/           widget, share receiver, manifest, boot theme; .githu
 
 ## What is verified
 
-- `tsc --noEmit`, the production web build, and **228 JavaScript tests**: task parsing, repeats, carry-over, conflicts
+- `tsc --noEmit`, the production web build, and **247 JavaScript tests**: task parsing, repeats, carry-over, conflicts
   and diff, pins, templates, week maths, reminders, editor decorations, per-line preview editing, calendar day tasks,
   update checking, torn and concurrent saves, folder counts, startup-cache retry, paged notes, the Android folder layer
   against a fake document provider, tab swipes, the back gesture, swipe-to-delete with undo, external links and their
   scheme allow-list, wiki links by title, rename that rewrites inbound links with one Undo, task search and the paged Done
-  list, and the local version store (five kept, duplicates dropped, restore writes the old text back).
+  list, the local version store (five kept, duplicates dropped, restore writes the old text back), the preview's
+  blockquotes, ordered lists, rules and tables, downscaling a big photo before it is written, and the matching line in
+  a search result.
 - `cargo test`: **12 Rust tests** for the desktop file layer.
 - CI is green: types, tests and web build; the Rust shell; desktop installers on Linux, Windows and macOS; an Android APK
   built and signed from the release keystore.

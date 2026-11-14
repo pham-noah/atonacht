@@ -6,12 +6,13 @@ Audit method: read the source, then **built and tested for real** — `npx tsc -
 in a browser: the browser harness timed out on this machine, so no visual claims are made below that the code
 does not prove. Nothing was changed in the app by this audit; only this file was added.
 
-## 0. Status — what has been implemented (2026-11-14, third pass)
+## 0. Status — what has been implemented (2026-11-14, fourth pass)
 
-**All five items of §4 are done** on `master`. Items 1-3 landed in the second pass (`bb734c7`, `66d795d`, `5839f45`),
-item 4 (local version history) and item 5 (README truth pass) in this one. The gate was run on the final tree:
-`npx tsc --noEmit` clean, `npx vitest run` **228/228 passing** (41 files), `npm run build` clean (`index` 272.20 kB /
-88.32 kB gzip). Nothing was version-bumped, tagged or released.
+**All five items of §4 are done**, and so are the three §3 leftovers that were never in the top five (F, H, I).
+Items 1-3 landed in the second pass (`bb734c7`, `66d795d`, `5839f45`), items 4 (local version history) and 5 (README
+truth pass) in the third, and F/H/I in this one. The gate was run on the final tree:
+`npx tsc --noEmit` clean, `npx vitest run` **247/247 passing** (42 files), `npm run build` clean (`index` 274.13 kB /
+89.04 kB gzip). Nothing was version-bumped, tagged or released.
 
 | # | Item | Status | Commit |
 |---|------|--------|--------|
@@ -19,7 +20,10 @@ item 4 (local version history) and item 5 (README truth pass) in this one. The g
 | 2 | Renaming a note keeps its backlinks (B) | done | `66d795d` |
 | 3 | All tasks: search + a Done list that pages (C) | done | `5839f45` |
 | 4 | Local version history (D) | done | `854e0d5` |
-| 5 | README truth pass (E) | done | this commit |
+| 5 | README truth pass (E) | done | `c25e1d9` |
+| 6 | Preview richness: quotes, ordered lists, rules, tables (F) | done | this commit |
+| 7 | Downscale a big photo before it is written (H) | done | this commit |
+| 8 | Search results show the matching line, marked (I) | done | this commit |
 
 The UI was driven **for real** this time in Chromium (headless, 390×844, 2× DPR) against `vite` with the demo
 file layer, so the claims below have screenshots and DOM assertions behind them, not just unit tests. Evidence
@@ -83,9 +87,51 @@ run. Every number was reproduced from the command next to it.
 ### Gate, run on the final tree
 ```
 npx tsc --noEmit   → clean
-npx vitest run     → 41 files, 228 tests, all passing
-npm run build      → clean (index 272.20 kB / 88.32 kB gzip)
+npx vitest run     → 42 files, 247 tests, all passing
+npm run build      → clean (index 274.13 kB / 89.04 kB gzip)
 ```
+
+### Item 6 — preview richness (F, §3) (done)
+`src/lib/markdown.ts` gained three block rules and a table rule, all of them still carrying the source line range so
+**double-click-to-edit keeps working**: `> quote` lines collect into one `<blockquote>` spanning every quoted line, a
+`1.`/`1)` line becomes `div.md-li.md-ol` with the number as written in a `.num` chip (the list does not renumber your
+note), `---` / `***` / `___` become `<hr>`, and a `| pipe |` header followed by a `|---|:--:|` rule becomes a real
+`<table>` with `thead`, `tbody` and the column alignment in `text-align`. CSS for the quote (accent left border), the
+rule, the table (borders, header background, sideways scroll on a phone) and the numbers lives beside the existing
+`.md-li` rule.
+- Deviation from §3: a table is **one block**, not one per row, so double-clicking any cell edits the whole table — the
+  only honest choice, since a row alone is not valid Markdown. Verified live: the editor opened with all four lines.
+- Deliberately not done: nested quotes, nested tables in list items, and inline `|` escapes (`\|`). None is common in
+  these notes, and each would have cost more than the whole feature.
+- Tests: `lib.test.ts` (blocks, alignment, the whole-table range, pipe text that is not a table, front matter that must
+  not become a rule, and a quote and a paragraph not swallowing each other) and `inline.test.tsx` (the four blocks in
+  the rendered preview).
+
+### Item 7 — a big photo is written smaller (H, §3) (done)
+`src/lib/attachments.ts` now has `fitWithin()` (long edge capped at `MAX_PHOTO_EDGE = 2000` px, never enlarged),
+`shrinkPhoto()` (decide → decode → redraw at `PHOTO_QUALITY = 0.85` → keep the result only when it is actually
+smaller), and one `Raster` interface with the browser implementation (`createImageBitmap` + canvas) behind it, which is
+what makes the whole thing testable in jsdom. `Editor.tsx` runs a picked or pasted file through it before
+`fs.writeBytes`. `photoName()` also stops a JPEG that the clipboard calls `image.png` from being written as a `.png`.
+- Deviation from §3: only JPEG and WebP are re-encoded. PNG is left byte-for-byte alone because PNG is the format
+  people use for transparency, and a canvas re-encode of PNG saves little while risking that alpha channel; GIF, SVG and
+  AVIF are left alone for the same reason (SVG is text, AVIF needs a different encoder). Any failure — an undecodable
+  file, a canvas that returns nothing, an encode that comes back bigger — keeps the original bytes, so a note never
+  loses its picture to a resize.
+- Verified live at 390×844 with a real 4,080,531-byte, 4032×3024 JPEG: written at **895,869 bytes / 2000×1500** (22 % of
+  the original), and `img.naturalWidth` in the preview was 2000 — the picture still renders.
+- Tests: `attachments.test.ts` — a fake 4032×3024 bitmap asserts the redraw is asked for exactly 2000×1500 at quality
+  0.85 and that the written bytes are smaller, plus portrait, already-small (never decoded), PNG untouched (the same
+  bytes object back), encode-bigger, undecodable, the `fitWithin` arithmetic and the `photoName` rename.
+
+### Item 8 — the line that matched, marked (I, §3) (done)
+`matchSnippet()` in `markdown.ts` returns the first line holding the term cut into `before` / `hit` / `after`, windowed
+around the hit when the line is long (so the term is never the part that gets cut). `Notes.tsx` renders that for a
+result row and falls back to `snippet()` when the match was in the file name only. The `<mark>` styling is one CSS rule.
+- Verified live: a 41-line note that mentions rent only on its last line, searched with `rent` at 390×844, showed
+  `- [ ] Pay rent by Friday` with **rent** marked, and not the opening line.
+- Tests: `lib.test.ts` (line 41 of a note, the long-line window, no match, blank term) and a new
+  `searchline.test.tsx` (three app-level runs: the matched line, the file-name fallback, and the note's own casing).
 
 ## 1. What it is
 
@@ -127,10 +173,10 @@ write can only be undone if GitHub is configured; README numbers have drifted.
 | C | All tasks: text search box; page the Done list instead of stopping at 100 | S | high |
 | D | Local per-note version history (last N saves) restorable from History, no GitHub needed | M | high |
 | E | README/docs truth pass (test counts, bundle size, what is verified) | S | medium |
-| F | Preview: tables, ordered lists, blockquotes, `---` (today everything but `-` lists and headings is a paragraph) | M | medium |
+| F | Preview: tables, ordered lists, blockquotes, `---` (today everything but `-` lists and headings is a paragraph) — **done, §0 item 6** | M | medium |
 | G | Split `src/ui/SettingsPanels.tsx` (833 lines, the largest file in `src/`) into one file per panel | M | low (churn risk) |
-| H | Attachments: downscale large pasted photos before writing (a 12 MP phone photo lands at full size) | M | medium |
-| I | Search: highlight the matching line in results instead of the note's opening line | S | medium |
+| H | Attachments: downscale large pasted photos before writing (a 12 MP phone photo lands at full size) — **done, §0 item 7** | M | medium |
+| I | Search: highlight the matching line in results instead of the note's opening line — **done, §0 item 8** | S | medium |
 
 ## 4. Top 5, in order
 
@@ -229,12 +275,17 @@ All three green, plus the per-item success check above, plus a screenshot of the
 
 ## 7. What is left, and why
 
-Nothing from the top 5 is deferred any more: items 1-5 of §4 are done. What is deliberately untouched:
+Nothing from the top 5 is deferred, and the three §3 candidates worth doing are done too: F (preview blockquotes,
+numbered lists, rules and tables), H (photo downscaling before writing) and I (the matching line in search results).
+Items 1-5 of §4 landed in the second and third pass, F/H/I in the fourth (§0 items 6-8).
 
-- **§3 candidates F (preview blockquotes/tables/ordered lists), H (photo downscaling before writing), I (highlight the
-  matching line in search results).** None of them was in the top 5; they are the natural next three if this file is
-  worked again, F being the one a user notices (today everything but heading and `-` lists is a paragraph).
-- **§3 G (split `SettingsPanels.tsx`)** and bundle trimming stay unproposed for the reasons in §5.
+What is deliberately untouched:
+
+- **§3 G (split `SettingsPanels.tsx`)** and bundle trimming stay unproposed for the reasons in §5: real debt, pure churn
+  while the feature list is still moving.
+- **The long tail of Markdown** that F does not cover: nested quotes, tables inside list items, `\|` escapes, setext
+  headings (`Title` under `===`), reference links and footnotes. Each is rare in these notes, and the renderer's job is
+  the shapes people write, not CommonMark conformance; a real parser would be the answer if that ever changes.
 
 Two things the local history deliberately does *not* do, so nobody reads them into the code:
 
@@ -243,6 +294,7 @@ Two things the local history deliberately does *not* do, so nobody reads them in
 - It keeps **five versions of the text being replaced**, not five snapshots taken on a timer; a note saved once has no
   history until it is saved a second time, and a note over 200 kB keeps none.
 
-Evidence for all five items: `docs/improvement-evidence/` (README index + the 390×844 screenshots of the preview links,
-the live editor links, the Done paging, the task search, the rename snack, and now the local History list, its version
-preview and the Settings row that clears it).
+Evidence for all eight items: `docs/improvement-evidence/` (README index + the 390×844 screenshots of the preview links,
+the live editor links, the Done paging, the task search, the rename snack, the local History list, its version preview,
+the Settings row that clears it, the preview's quote/numbered list/rule/table, the downscaled photo and the search
+result that shows its matching line).

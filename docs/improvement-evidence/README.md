@@ -1,8 +1,8 @@
 # Evidence for the items in `ATONACHT_IMPROVEMENT_SPEC.md`
 
-Captured 2026-11-14 on `master` (after `bb734c7`, `66d795d`, `5839f45`) by driving the real app in headless
-Chromium at **390×844, 2× DPR** against `npx vite` with the demo file layer, so each picture is the app running,
-not a mock. Screenshots are full-viewport.
+Captured 2026-11-14 on `master` (after `bb734c7`, `66d795d`, `5839f45`, and for the last four rows the F/H/I pass) by
+driving the real app in headless Chromium at **390×844, 2× DPR** against `npx vite` with the demo file layer, so each
+picture is the app running, not a mock. Screenshots are full-viewport.
 
 | File | What it proves |
 |------|----------------|
@@ -18,6 +18,10 @@ not a mock. Screenshots are full-viewport.
 | `history-on-device.png` | With **no** GitHub repository or token, a note's History lists three local versions (newest first, each with its size) under **On this device**, and says where the repository history would appear. |
 | `history-version-preview.png` | Tapping the oldest version shows its exact text (`- [ ] Take a shower`) with **Restore this version**. |
 | `settings-clear-history.png` | Settings → Files & backup → **History on this device** → *Clear local version history*, next to the startup-cache rows. |
+| `preview-rich-blocks.png` | A note with `> quote`, `1.`/`2.` numbered lines, `---` and a pipe table renders as a quote (accent border), a numbered list, a rule and a table with aligned columns — not four more paragraphs. |
+| `attachment-photo-downscaled.png` | A 4032×3024 / 4.08 MB JPEG picked into a note was written at 2000×1500 / 0.90 MB and still renders in the preview (`img.naturalWidth` 2000, from the bytes the folder returned). |
+| `attachment-written-line.png` | The line the attach wrote into the note: `![big.jpg](Attachments/2026-11-14-222112-big.jpg)` — the picture is a file in `Attachments/`, not inline data. |
+| `search-hit-line.png` | Searching `rent` in a 41-line note shows `- [ ] Pay rent by Friday` with **rent** marked, not the note's opening line. |
 
 DOM assertions from the same runs (not visible in a still):
 
@@ -39,3 +43,18 @@ From the History run (2026-11-14, `master` after the local-version change, same 
   so the restore itself can be undone.
 - *Clear local version history* reported _Cleared the version history on this device._ and the IndexedDB store then held
   **0** rows.
+
+From the §3-leftovers run (2026-11-14, same 390×844 setup, demo file layer, `npx vite`):
+
+- Preview: `.preview blockquote` → `Ship it on Friday and tell nobody`; `<hr>` present; `.md-ol` texts `1.Draft the letter`
+  and `2.Send it` with `.num` chips; `th` = `Item:left`, `Cost:right` (the `:--` / `--:` alignment) and `td` =
+  `Venue|200|Cake|35`. Double-clicking a cell opened the line editor with the **whole table** (`| Item | Cost |\n|:--|--:|…`),
+  because a table is one block — line editing still writes back exactly what it read.
+- Attachments: `DOM.setFileInputFiles` handed the app a 4032×3024, 4,080,531-byte JPEG. The folder then held
+  `Attachments/2026-11-14-222112-big.jpg` at **895,869 bytes** (0.90 MB, 22 % of the original), and the note gained
+  `![big.jpg](Attachments/2026-11-14-222112-big.jpg)`; in preview `img.naturalWidth/Height` were **2000×1500** and the
+  picture drew (the demo layer stores bytes as a data URL, so this is the real written file, read back through `readBytes`).
+- Search: the note `Notes/Meeting.md` is 41 lines and mentions rent only on the last one. Typing `rent` gave **one** row
+  whose second line is `- [ ] Pay rent by Friday` with `<mark>rent</mark>` — the opening line (`line 1 of the meeting
+  notes …`) is not shown. A note whose only match is its file name (`Notes/Rent ledger.md`) still falls back to the
+  opening line and has no `mark`.

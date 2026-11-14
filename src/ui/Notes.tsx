@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useWide } from "../useWide";
 import { today } from "../lib/dates";
 import { fillTemplate } from "../lib/templates";
-import { noteTitle, snippet } from "../lib/markdown";
+import { matchSnippet, noteTitle, snippet } from "../lib/markdown";
 import { plural } from "../lib/plural";
 import { describeQuery, noteMatches, parseQuery } from "../lib/search";
 import { useNav } from "../nav";
@@ -77,7 +77,10 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
       )}
       <section className="card list">
         {list.length === 0 && <p className="muted">No notes found.</p>}
-        {visible.map(([p, c]) => (
+        {visible.map(([p, c]) => {
+          // the line that matched, so the row answers "why is this here?" - the opening line often does not
+          const hit = needle ? matchSnippet(c, needle) : null;
+          return (
           <button
             key={p}
             className="noterow"
@@ -103,10 +106,11 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
             }}
           >
             <span className="nt">{noteTitle(p, c)}</span>
-            <span className="muted small">{snippet(c)}</span>
+            <span className="muted small">{hit ? <>{hit.before}<mark>{hit.hit}</mark>{hit.after}</> : snippet(c)}</span>
             <span className="meta"><span className="chip">{p.includes("/") ? p.split("/")[0] : "Notes"}</span><span className="muted small">{when(mtimes[p] ?? 0)}</span></span>
           </button>
-        ))}
+          );
+        })}
         {list.length > shown && (
           <button className="pill" onClick={() => setShown((n) => n + PAGE)}>Show {Math.min(PAGE, list.length - shown)} more of {list.length}</button>
         )}

@@ -9,7 +9,7 @@ import { usePrefs } from "../prefs";
 import { buildLinks } from "../lib/backlinks";
 import { externalHref, noteFor, noteIndex } from "../lib/links";
 import { openExternal } from "../lib/update";
-import { attachmentMarkdown, attachmentName, attachmentPath, mimeOf } from "../lib/attachments";
+import { attachmentMarkdown, attachmentName, attachmentPath, mimeOf, photoName, shrinkPhoto } from "../lib/attachments";
 import { fs } from "../lib/backend";
 import { noteTitle } from "../lib/markdown";
 import { BackBar, Icon, RenameNoteDialog } from "./common";
@@ -72,9 +72,12 @@ export function Editor({ path }: { path: string }) {
     if (!files || !files.length || !fs.writeBytes) return;
     const parts: string[] = [];
     for (const file of Array.from(files)) {
-      const path = attachmentPath(attachmentName(file.name || "pasted.png"));
+      // a 12 MP phone photo is 8x the pixels a note needs; it is written at MAX_PHOTO_EDGE instead (attachments.ts)
+      const path = attachmentPath(attachmentName(photoName(file.name || "pasted.png", file.type)));
       try {
-        await fs.writeBytes(root, path, new Uint8Array(await file.arrayBuffer()));
+        const original = new Uint8Array(await file.arrayBuffer());
+        const { bytes } = await shrinkPhoto({ name: file.name || "pasted.png", type: file.type, bytes: original });
+        await fs.writeBytes(root, path, bytes);
         parts.push(attachmentMarkdown(path, file.name));
       } catch (e) {
         setState("error");
