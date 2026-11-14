@@ -10,10 +10,12 @@ configure({ asyncUtilTimeout: 5000 });
 // at the start of the next one - before refresh() corrected it. Once per file, so a file can still test the cache itself.
 beforeAll(async () => {
   if (!globalThis.indexedDB) return;
-  await new Promise<void>((done) => {
-    const req = indexedDB.deleteDatabase("atonacht-cache-v1");
-    req.onsuccess = req.onerror = req.onblocked = () => done();
-  });
+  for (const name of ["atonacht-cache-v1", "atonacht-history-v1"]) {
+    await new Promise<void>((done) => {
+      const req = indexedDB.deleteDatabase(name);
+      req.onsuccess = req.onerror = req.onblocked = () => done();
+    });
+  }
 });
 // CodeMirror measures text with browser APIs that jsdom doesn't implement. These stubs let it run in tests.
 if (typeof document !== "undefined") {

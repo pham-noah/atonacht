@@ -2,6 +2,7 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, 
 import { fs } from "./lib/backend";
 import { mapPool } from "./lib/pool";
 import { noteCache } from "./lib/noteCache";
+import { noteHistory } from "./lib/noteHistory";
 import { planTrashCleanup, stampPath, unstampPath } from "./lib/trash";
 import type { Entry } from "./lib/fs";
 import { addDays, today } from "./lib/dates";
@@ -207,7 +208,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const save = useCallback(
     async (path: string, content: string) => {
-      if (ref.current[path]?.content === content) return; // nothing changed: don't touch the file, so sync apps see nothing
+      const before = ref.current[path]?.content;
+      if (before === content) return; // nothing changed: don't touch the file, so sync apps see nothing
+      // Keep the text being replaced before it is gone: on Android the write truncates the file first, and an outside
+      // editor can replace a note while the app is closed. A version store must never be able to fail a save.
+      if (before !== undefined) void noteHistory.record(root, path, before).catch(() => {});
       writing.current++;
       try {
         const mtime = await fs.write(root, path, content);

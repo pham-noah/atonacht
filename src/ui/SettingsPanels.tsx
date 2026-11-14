@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { saveBytes } from "../lib/exportFile";
 import { Fetcher, Probe, SyncStatus, alternateLoopback, describeSyncError, fetchSyncStatus, probeCandidates, probeUrl, scanSyncthing } from "../lib/syncthing";
 import { noteCache } from "../lib/noteCache";
+import { noteHistory } from "../lib/noteHistory";
 import { fs, isTauri } from "../lib/backend";
 import { DAILY_TEMPLATE, STARTERS } from "../lib/templates";
 import { useNav } from "../nav";
@@ -743,6 +744,11 @@ export function FilesPanel() {
       <Group title="Fast startup">
         <Toggle label="Keep a copy of my notes for faster starts" hint="Stored in Atonacht's own app storage. The app then reads only notes that changed since last time." value={prefs.startupCache} onChange={(v) => { setPrefs({ startupCache: v }); if (!v) void noteCache.clear(); }} />
         <Row label="Clear the cached copy" hint="Your notes are untouched. The next start just takes a little longer."><button className="pill" onClick={async () => { await noteCache.clear(); setMsg("Cleared the cached copy."); }}>Clear</button></Row>
+      </Group>
+      <Group title="History on this device">
+        <Row label="Clear local version history" hint="Every save keeps the text it replaced, so a bad edit can be undone from History without GitHub. Clearing this cannot be undone.">
+          <button className="pill" onClick={async () => { await noteHistory.clear(); setMsg("Cleared the version history on this device."); }}>Clear</button>
+        </Row>
       </Group>
       <FolderCheck />
       <Group title="Trash">
