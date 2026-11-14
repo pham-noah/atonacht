@@ -6,6 +6,61 @@ Audit method: read the source, then **built and tested for real** — `npx tsc -
 in a browser: the browser harness timed out on this machine, so no visual claims are made below that the code
 does not prove. Nothing was changed in the app by this audit; only this file was added.
 
+## 0. Status — what has been implemented (2026-11-14, second pass)
+
+Items **1, 2 and 3 of §4 are done** on `master`; items 4 and 5 are deferred (§7). The gate for all three was run
+on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **222/222 passing** (40 files), `npm run build` clean
+(`index` 269.08 kB / 87.36 kB gzip). Nothing was version-bumped, tagged or released.
+
+| # | Item | Status | Commit |
+|---|------|--------|--------|
+| 1 | Links that actually work (A) | done | `bb734c7` |
+| 2 | Renaming a note keeps its backlinks (B) | done | `66d795d` |
+| 3 | All tasks: search + a Done list that pages (C) | done | `5839f45` |
+| 4 | Local version history (D) | deferred — see §7 | — |
+| 5 | README truth pass (E) | deferred — see §7 | — |
+
+The UI was driven **for real** this time in Chromium (headless, 390×844, 2× DPR) against `vite` with the demo
+file layer, so the claims below have screenshots and DOM assertions behind them, not just unit tests. Evidence
+files are in `docs/improvement-evidence/` (see the index there).
+
+### Item 1 — links (done)
+- `renderMarkdown("see [Google](https://google.com)")` → one `a.ext` with `href`/`data-href` and
+  `rel="noopener noreferrer"`; `externalHref("javascript:alert(1)")` is `null`, and the note text
+  `[bad](javascript:alert(1))` stays literal in the rendered preview (checked in the live DOM, not just a test).
+- Clicking `Google` in the preview calls `openExternal` → the system hand-off path (`window.open` in the browser
+  demo recorded `https://google.com`; under Tauri it goes through `plugin-opener`, already initialised in
+  `lib.rs` with `opener:default` in `capabilities/default.json`).
+- `[[Deep Work Notes]]` in a note whose file is `deep-work.md` navigates to that note. Verified in the preview
+  (h1 `Links` → `Deep Work Notes`) and in the live editor (`Ctrl/Cmd`-click on `.cm-wl`).
+- Deviation from the plan: in the **live editor** a link follows on `Ctrl/Cmd`-click, not a plain click — a plain
+  click in a text editor has to place the caret, and the editor already used that gesture for `[[wiki]]` links.
+  The preview keeps plain click.
+
+### Item 2 — rename keeps backlinks (done)
+Live run: `Beta.md` holding `See [[Alpha]] and [[Alpha|the other one]].`, rename `Alpha.md → Renamed Alpha.md` →
+`Beta.md` becomes `See [[Renamed Alpha]] and [[Renamed Alpha|the other one]].`, the snack reads
+_Renamed to “Renamed Alpha” · 1 note updated_, and Undo restores both the file name and the exact original link
+text. A neighbouring `[[Alphabet soup]]` is left alone. If the rename itself throws, the rewritten notes are put
+back before the error propagates.
+- Deviation from the plan: the rewrite matches the **old file name** rather than `noteKeys(from, oldTitle)`. A
+  title comes from the note's `# H1`, so it survives a rename untouched — a `[[Title]]` link still resolves after
+  the file is renamed and rewriting it would change text without fixing anything. Only the file-name key can be
+  broken by a rename, so only that key is rewritten.
+
+### Item 3 — tasks search + paging (done)
+At 390×844 with 120 done tasks: the Done list draws 100 rows, offers _Show 20 more_, and after one tap draws all
+120 with the oldest row (`Finished task 119`) on screen and no further button. Typing `rent` in _Search tasks_
+narrows 3 open rows to `Pay rent`, `#shopping` typed in the box filters too and reports what it understood
+(`tag #shopping · 1 task`), and a tag pill still applies on top of the search.
+
+### Gate, run on the final tree
+```
+npx tsc --noEmit   → clean
+npx vitest run     → 40 files, 222 tests, all passing
+npm run build      → clean (index 269.08 kB / 87.36 kB gzip)
+```
+
 ## 1. What it is
 
 Atonacht is a Markdown notes + to-do app for desktop and Android: one Tauri 2 + React 18 + TypeScript
@@ -52,7 +107,7 @@ write can only be undone if GitHub is configured; README numbers have drifted.
 
 ## 4. Top 5, in order
 
-### 1. Links that actually work (A)
+### 1. Links that actually work (A) — **DONE** (`bb734c7`)
 **Problem.** `src/lib/markdown.ts` `inline()` handles images and `[[wiki]]` links but has no rule for
 `[text](url)`: a normal Markdown link is rendered as literal `[text](url)`. Nothing in `src/` calls
 `openUrl` except `src/lib/update.ts` (the update button), even though `@tauri-apps/plugin-opener` is
@@ -78,7 +133,7 @@ clicks (Ctrl/Cmd-click or plain click, matching the preview).
 differs from the file name (test in `inline.test.tsx`); clicking a link in `npm run tauri dev` opens the
 default browser. Gate: `npx vitest run` still 209+ passing, `tsc --noEmit` clean.
 
-### 2. Renaming a note keeps its backlinks (B)
+### 2. Renaming a note keeps its backlinks (B) — **DONE** (`66d795d`)
 **Problem.** `store.tsx` `renameNote` is `fs.rename` + `refresh`. Links match by file base name or title, so
 after `Idea.md → Ideas.md` every note containing `[[Idea]]` shows it as a missing link. No test covers this.
 **Change.** New `rewriteLinks(content, fromKeys: string[], toName: string)` in `backlinks.ts` that rewrites
@@ -93,7 +148,7 @@ note so one tap restores everything. Skip conflict copies.
 `[[Gamma]]`, `buildLinks` shows no missing link, and Undo restores `[[Alpha]]` plus the old file name.
 Manual: rename in the Notes context menu, reopen the linked note, the link is live.
 
-### 3. All tasks: search, and a Done list that ends honestly (C)
+### 3. All tasks: search, and a Done list that ends honestly (C) — **DONE** (`5839f45`)
 **Problem.** `src/ui/Tasks.tsx` filters by status and tag pills only — no text search, in an app whose point
 is tasks buried in many notes. The Done branch is
 `base.filter(done…).slice(0, 100)` with no "Show more" and no "that's all" message, so done work older than
@@ -106,7 +161,7 @@ a `doneList` const and page it with the same `more` counter as the Open sections
 **Success.** Test: 120 done tasks → "Show 20 more" appears and reveals them; typing `rent` narrows to the
 one matching row while tag pills still apply. Screenshot at 390×844 with a search term active.
 
-### 4. Local version history, so a bad write is recoverable (D)
+### 4. Local version history, so a bad write is recoverable (D) — **DEFERRED**
 **Problem.** The only per-note history is GitHub commits (`History.tsx`), which needs a token and a repo.
 On Android the file layer truncates before writing (`safFs.ts` `writeVerified` — the README's known gap #1),
 and an outside editor/Syncthing can also replace a note. There is no local undo beyond `.trash`.
@@ -121,7 +176,7 @@ button (same interaction as the GitHub list) when no GitHub remote is configured
 the note is reloaded; nothing is written when a save is a no-op. Manual: edit a note in Notepad while the app
 is closed, reopen, restore the previous version from History.
 
-### 5. README truth pass (E)
+### 5. README truth pass (E) — **DEFERRED**
 **Problem.** Measured now vs. what the README says: **209** JS tests (README: 148, twice), **86.7 kB** gzip in
 the initial `index` chunk (README: 72 KB), and the "Known gaps" list will be out of date once items 1-4 land.
 **Change.** Update the three numbers, add the new History/version behaviour, and move any fixed gap out of
@@ -144,3 +199,21 @@ npx tsc --noEmit && npx vitest run && npm run build
 ```
 All three green, plus the per-item success check above, plus a screenshot of the touched screen at
 390×844. No version bump, tag or release as part of this work.
+
+## 7. Deferred, and why
+
+- **Item 4, local version history (D).** It is a new subsystem, not a fix: a version store in IndexedDB next to
+  `noteCache.ts` (write on every non-no-op save, prune to 5, size-cap), a "This device" section in `History.tsx`
+  that has to coexist with the GitHub history list, a "Clear local history" settings row, and its own tests. That
+  is a card's worth of work on its own, and it touches the save path — the one code path where a mistake costs a
+  user their note. It should land behind its own change with the `v1…v6` restore test as the gate, not be bolted
+  on at the end of an item-1-to-3 pass.
+- **Item 5, README truth pass (E).** It was written against a 209-test tree; the tree is now 222 tests and the
+  `index` chunk is 87.36 kB gzip, both moved by the three items above. Doing it now would bake in numbers that
+  item 4 will move again, so it belongs after the last item from this file lands — one truth pass, one set of
+  numbers.
+- **§3 candidates F (preview blockquotes/tables/ordered lists), H (photo downscaling), I (search line highlight)**
+  were never in the top 5 and are untouched.
+
+Evidence for the three done items: `docs/improvement-evidence/` (README index + the 390×844 screenshots of the
+preview links, the live editor links, the Done paging, the task search, and the rename snack).
