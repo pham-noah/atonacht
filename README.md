@@ -39,22 +39,27 @@ Daily notes and to-dos kept as plain Markdown files, on your own devices. One Ta
 eye button opens the preview, where **double-clicking a line edits just that line** (Enter writes it back, Shift+Enter
 adds a line, Esc cancels). Folders, search, pinned notes (`pinned: true` front matter, so it syncs), rename/move,
 templates in `Templates/` (`{{title}}`, `{{date}}`, `{{long_date}}`), and a Trash that empties itself after 7, 30 or 90
-days — the deletion time lives in the file name, so it survives syncing.
+days — the deletion time lives in the file name, so it survives syncing. Renaming or moving a note rewrites every note
+that pointed at it (`[[old]]`, `[[old|alias]]` and `[[old#heading]]`), and one Undo puts the links and the file name back.
 
 **Attachments** — paste a picture into a note, or use the paperclip: the bytes go into `Attachments/` and a link is
 written at the cursor. The preview reads them back through the folder, so it works the same on the desktop (Rust), on
 Android (SAF) and in the browser demo. Pictures outside the folder are left as ordinary Markdown images.
 
 **Links and tags** — every note shows what it links to and what points at it; a `[[link]]` to a name no note has is shown
-as missing rather than dropped. Tags have their own screen with counts, and search understands `tag:`, `in:`, `due:`,
-`is:` and `has:`.
+as missing rather than dropped, and it opens whether you wrote the file name or the note's title. Ordinary Markdown
+links (`[text](https://…)`) open in your browser — `http`, `https` and `mailto` only, anything else stays literal text —
+and a `[[link]]` can be followed in the live editor too (Ctrl/Cmd-click, since a plain click there has to place the
+cursor). Tags have their own screen with counts, and search understands `tag:`, `in:`, `due:`, `is:` and `has:`.
 
 **Tasks** live in the note text. Every checkbox in every note appears in All tasks, grouped Overdue / Today / This week /
 Later / No date, and checking one writes back to its source note. Repeats: `daily`, `weekdays`, `weekly`, `weekly:thu`,
 `monthly`, `monthly:29`, `yearly`, counted from the due date or the completion date. Home shows today's note with quick
 add, carry-over of yesterday's leftovers, due today and pinned notes. **Tap a task to rename it in place; hold it for due
 date, priority, repeat and board column.** On a phone, swipe right to complete and left to move to tomorrow or delete —
-with a live panel while dragging and Undo after a delete.
+with a live panel while dragging and Undo after a delete. All tasks has a search box of its own (same `tag:` / `due:` /
+`is:` grammar, plus a plain text match), and long lists — Done included — draw 100 rows at a time and end in **Show
+more** rather than stopping at an arbitrary limit.
 
 **Board** — To do, Doing, Done plus any columns you add; a card's column is stored as `@status(doing)` in its line, and a
 checked task is in Done (a repeating task dropped there starts its next round in To do). Sort by priority, due date, note
@@ -86,6 +91,12 @@ and commits (one commit per sync, not one per note) and runs on start and every 
 remote; when both sides changed the same note the remote copy is kept beside yours. A note's commits are on their own
 screen, with the old text and a Restore button.
 
+**History without a repository** — every save keeps the text it replaced, the last five versions per note, in the app's
+own storage (IndexedDB; notes over 200 kB are skipped). The clock in the editor lists them under *On this device*, with
+the same preview and Restore, so a bad edit, an outside editor or Android's truncate-then-write save can be undone with
+nothing configured. Restoring keeps the text it replaces as a version too, so a restore is undoable; Settings →
+Files & backup has a *Clear local version history* row. These versions are per device and never synced.
+
 **Elsewhere** — Diagnostics (version, folder, last error, copy for a bug report), command palette (Ctrl/Cmd + K), ZIP backup and restore (existing notes are never overwritten), and About
 with the version, the licence list, an update check against GitHub releases and a pre-filled "Report a problem" issue.
 
@@ -109,7 +120,7 @@ Daily notes are `Daily notes/YYYY-MM-DD.md` (folder configurable). Paths startin
 
 ```bash
 npm install
-npm test                  # 148 unit and UI tests
+npm test                  # 228 unit and UI tests
 npm run dev               # browser demo with sample notes: no real files, no notifications
 npm run tauri dev         # desktop app
 npm run tauri build       # desktop installers
@@ -131,7 +142,8 @@ text to "Add to Atonacht". The widget list refreshes whenever the app is open.
 
 Measured in a build sandbox, not on a phone:
 
-- 72 KB of compressed JavaScript on first load; the editor, settings, weekly review and ZIP code load on first use.
+- 88 kB of compressed JavaScript on first load (the `index` chunk: 272 kB raw); the editor, settings, weekly review and
+  ZIP code load on first use.
 - Saving a note in a 5,000-note folder costs about 30 ms afterwards, because only the changed note is parsed again.
 - Task lists and large folders draw 100 rows at a time with "Show more"; styling a 20,000-line note costs about 5 ms per
   keystroke, since only visible lines are decorated.
@@ -151,15 +163,19 @@ android/ scripts/           widget, share receiver, manifest, boot theme; .githu
 
 ## What is verified
 
-- `tsc --noEmit`, the production web build, and **148 JavaScript tests**: task parsing, repeats, carry-over, conflicts
+- `tsc --noEmit`, the production web build, and **228 JavaScript tests**: task parsing, repeats, carry-over, conflicts
   and diff, pins, templates, week maths, reminders, editor decorations, per-line preview editing, calendar day tasks,
   update checking, torn and concurrent saves, folder counts, startup-cache retry, paged notes, the Android folder layer
-  against a fake document provider, tab swipes, the back gesture, swipe-to-delete with undo.
+  against a fake document provider, tab swipes, the back gesture, swipe-to-delete with undo, external links and their
+  scheme allow-list, wiki links by title, rename that rewrites inbound links with one Undo, task search and the paged Done
+  list, and the local version store (five kept, duplicates dropped, restore writes the old text back).
 - `cargo test`: **12 Rust tests** for the desktop file layer.
 - CI is green: types, tests and web build; the Rust shell; desktop installers on Linux, Windows and macOS; an Android APK
   built and signed from the release keystore.
 - The Windows build has been launched and renders; the main screens were reviewed in Chromium at 390×844 and 1280×800 in
-  all three themes.
+  all three themes. History was driven the same way (390×844, demo file layer): three saves listed three versions, the
+  oldest one restored the note's text, and *Clear local version history* emptied the store — screenshots and DOM notes in
+  `docs/improvement-evidence/`.
 
 **Not verified:** Android on a physical device (the system folder picker with real document providers, widgets, share
 sheet, scheduled notifications, screenshot and recents options), the fingerprint plugin, Syncthing status against a live
@@ -168,7 +184,8 @@ Syncthing, and macOS/Linux runtime.
 ## Known gaps
 
 - Android cannot swap a finished file into place, so a save briefly empties the note before writing it; Atonacht reads it
-  back and rewrites if needed. Leave Syncthing's "Watcher delay" at 10 s or higher.
+  back and rewrites if needed. Leave Syncthing's "Watcher delay" at 10 s or higher. The text a save replaces is kept in
+  the local version history, so even that moment is recoverable from History.
 - Android checks for changes every 8 seconds; only desktop has a real file watcher.
 - "Hide content in recent apps" needs Android 13+; older versions fall back to blocking screenshots.
 - Notes deleted before this version carry no deletion time; their clock starts the first time the app sees them.

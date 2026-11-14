@@ -6,19 +6,20 @@ Audit method: read the source, then **built and tested for real** — `npx tsc -
 in a browser: the browser harness timed out on this machine, so no visual claims are made below that the code
 does not prove. Nothing was changed in the app by this audit; only this file was added.
 
-## 0. Status — what has been implemented (2026-11-14, second pass)
+## 0. Status — what has been implemented (2026-11-14, third pass)
 
-Items **1, 2 and 3 of §4 are done** on `master`; items 4 and 5 are deferred (§7). The gate for all three was run
-on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **222/222 passing** (40 files), `npm run build` clean
-(`index` 269.08 kB / 87.36 kB gzip). Nothing was version-bumped, tagged or released.
+**All five items of §4 are done** on `master`. Items 1-3 landed in the second pass (`bb734c7`, `66d795d`, `5839f45`),
+item 4 (local version history) and item 5 (README truth pass) in this one. The gate was run on the final tree:
+`npx tsc --noEmit` clean, `npx vitest run` **228/228 passing** (41 files), `npm run build` clean (`index` 272.20 kB /
+88.32 kB gzip). Nothing was version-bumped, tagged or released.
 
 | # | Item | Status | Commit |
 |---|------|--------|--------|
 | 1 | Links that actually work (A) | done | `bb734c7` |
 | 2 | Renaming a note keeps its backlinks (B) | done | `66d795d` |
 | 3 | All tasks: search + a Done list that pages (C) | done | `5839f45` |
-| 4 | Local version history (D) | deferred — see §7 | — |
-| 5 | README truth pass (E) | deferred — see §7 | — |
+| 4 | Local version history (D) | done | `854e0d5` |
+| 5 | README truth pass (E) | done | this commit |
 
 The UI was driven **for real** this time in Chromium (headless, 390×844, 2× DPR) against `vite` with the demo
 file layer, so the claims below have screenshots and DOM assertions behind them, not just unit tests. Evidence
@@ -54,11 +55,36 @@ At 390×844 with 120 done tasks: the Done list draws 100 rows, offers _Show 20 m
 narrows 3 open rows to `Pay rent`, `#shopping` typed in the box filters too and reports what it understood
 (`tag #shopping · 1 task`), and a tag pill still applies on top of the search.
 
+### Item 4 — local version history (done)
+`src/lib/noteHistory.ts` (new) is an IndexedDB store next to `noteCache.ts`: `record()` keeps the text a save replaces,
+prunes to `MAX_VERSIONS = 5` per note, skips a repeat of the newest version, skips notes over `MAX_VERSION_BYTES =
+200 000`, and never fails a save (the call is fire-and-forget and catches). `store.save()` records the previous content
+before writing it, which is exactly the text Android truncates and an outside editor destroys. `History.tsx` now always
+lists **On this device** (newest first, with each version's size) with the same preview and *Restore this version* as
+the repository list, and the GitHub section only appears when a repository and token are set. Settings → Files & backup
+gained *Clear local version history* next to the startup-cache rows.
+- Deviation from the plan: the editor's clock button used to render only when `prefs.githubRepo && prefs.githubToken`
+  were set — that guard is gone, so History is reachable on a device with nothing configured.
+- Deviation from the plan: versions are ordered by `(at, seq)`, a per-note counter, because six saves inside the same
+  millisecond sorted by timestamp alone come back in an arbitrary order (the `v1…v6` test caught it).
+- Verified live in Chromium at 390×844 against the demo file layer: three task renames gave three versions in
+  `atonacht-history-v1`; History listed them without any repository; restoring the oldest (44 bytes) wrote
+  `# Today\n\n- [ ] Take a shower\n- [ ] Buy milk\n` back into the note and kept the replaced text as a fourth version;
+  *Clear local version history* reported success and left 0 rows. Tests: `src/tests/notehistory.test.tsx` (5 store tests
+  plus an app-level "a save keeps the text it replaced, and History restores it").
+
+### Item 5 — README truth pass (done)
+`README.md` now says **228** tests (was 148, twice), **88 kB** gzip on first load (was 72 KB; 272.20 kB raw `index`
+chunk), documents the three behaviours from items 1-3 (links and their scheme allow-list, links by title, rename that
+rewrites inbound links, task search and the paged Done list) and the local version history, and moves the Android
+truncation gap from "unrecoverable" to "recoverable from History". The Chromium verification line now names the History
+run. Every number was reproduced from the command next to it.
+
 ### Gate, run on the final tree
 ```
 npx tsc --noEmit   → clean
-npx vitest run     → 40 files, 222 tests, all passing
-npm run build      → clean (index 269.08 kB / 87.36 kB gzip)
+npx vitest run     → 41 files, 228 tests, all passing
+npm run build      → clean (index 272.20 kB / 88.32 kB gzip)
 ```
 
 ## 1. What it is
@@ -86,7 +112,8 @@ carry-over, swipe gestures, board drag on mouse/pen/touch/keyboard, Kanban round
 and resolution, GitHub sync with per-note history, reminders with quiet hours, app lock, widgets/share
 target on Android, backup/restore, update check.
 
-Thin / broken (evidence below): external links are dead text; wiki links are only clickable in preview mode
+Thin / broken at audit time — the top five below are since fixed (§0); everything listed here was measured against
+`629f0dd`: external links are dead text; wiki links are only clickable in preview mode
 and resolve by file name only; renaming a note silently breaks every inbound `[[link]]`; All tasks has no
 text search and its Done list is a hard dead end at 100 rows; there is no local version history, so a bad
 write can only be undone if GitHub is configured; README numbers have drifted.
@@ -161,7 +188,7 @@ a `doneList` const and page it with the same `more` counter as the Open sections
 **Success.** Test: 120 done tasks → "Show 20 more" appears and reveals them; typing `rent` narrows to the
 one matching row while tag pills still apply. Screenshot at 390×844 with a search term active.
 
-### 4. Local version history, so a bad write is recoverable (D) — **DEFERRED**
+### 4. Local version history, so a bad write is recoverable (D) — **DONE** (`854e0d5`)
 **Problem.** The only per-note history is GitHub commits (`History.tsx`), which needs a token and a repo.
 On Android the file layer truncates before writing (`safFs.ts` `writeVerified` — the README's known gap #1),
 and an outside editor/Syncthing can also replace a note. There is no local undo beyond `.trash`.
@@ -176,7 +203,7 @@ button (same interaction as the GitHub list) when no GitHub remote is configured
 the note is reloaded; nothing is written when a save is a no-op. Manual: edit a note in Notepad while the app
 is closed, reopen, restore the previous version from History.
 
-### 5. README truth pass (E) — **DEFERRED**
+### 5. README truth pass (E) — **DONE**
 **Problem.** Measured now vs. what the README says: **209** JS tests (README: 148, twice), **86.7 kB** gzip in
 the initial `index` chunk (README: 72 KB), and the "Known gaps" list will be out of date once items 1-4 land.
 **Change.** Update the three numbers, add the new History/version behaviour, and move any fixed gap out of
@@ -200,20 +227,22 @@ npx tsc --noEmit && npx vitest run && npm run build
 All three green, plus the per-item success check above, plus a screenshot of the touched screen at
 390×844. No version bump, tag or release as part of this work.
 
-## 7. Deferred, and why
+## 7. What is left, and why
 
-- **Item 4, local version history (D).** It is a new subsystem, not a fix: a version store in IndexedDB next to
-  `noteCache.ts` (write on every non-no-op save, prune to 5, size-cap), a "This device" section in `History.tsx`
-  that has to coexist with the GitHub history list, a "Clear local history" settings row, and its own tests. That
-  is a card's worth of work on its own, and it touches the save path — the one code path where a mistake costs a
-  user their note. It should land behind its own change with the `v1…v6` restore test as the gate, not be bolted
-  on at the end of an item-1-to-3 pass.
-- **Item 5, README truth pass (E).** It was written against a 209-test tree; the tree is now 222 tests and the
-  `index` chunk is 87.36 kB gzip, both moved by the three items above. Doing it now would bake in numbers that
-  item 4 will move again, so it belongs after the last item from this file lands — one truth pass, one set of
-  numbers.
-- **§3 candidates F (preview blockquotes/tables/ordered lists), H (photo downscaling), I (search line highlight)**
-  were never in the top 5 and are untouched.
+Nothing from the top 5 is deferred any more: items 1-5 of §4 are done. What is deliberately untouched:
 
-Evidence for the three done items: `docs/improvement-evidence/` (README index + the 390×844 screenshots of the
-preview links, the live editor links, the Done paging, the task search, and the rename snack).
+- **§3 candidates F (preview blockquotes/tables/ordered lists), H (photo downscaling before writing), I (highlight the
+  matching line in search results).** None of them was in the top 5; they are the natural next three if this file is
+  worked again, F being the one a user notices (today everything but heading and `-` lists is a paragraph).
+- **§3 G (split `SettingsPanels.tsx`)** and bundle trimming stay unproposed for the reasons in §5.
+
+Two things the local history deliberately does *not* do, so nobody reads them into the code:
+
+- It is **per device and per notes root**: versions are never synced, and switching the notes folder gives that folder
+  its own list. GitHub commits remain the cross-device answer.
+- It keeps **five versions of the text being replaced**, not five snapshots taken on a timer; a note saved once has no
+  history until it is saved a second time, and a note over 200 kB keeps none.
+
+Evidence for all five items: `docs/improvement-evidence/` (README index + the 390×844 screenshots of the preview links,
+the live editor links, the Done paging, the task search, the rename snack, and now the local History list, its version
+preview and the Settings row that clears it).
