@@ -13,6 +13,22 @@ export function linksIn(content: string): string[] {
   return out;
 }
 
+/** A whole wiki link: the name, then whatever follows it — `|alias` or `#heading`. */
+const LINK_FULL = /\[\[([^\]|#]+)((?:[|#][^\]]*)?)\]\]/g;
+
+/**
+ * Rewrites the links that pointed at an old note name, so renaming `Idea.md` does not leave every note that said
+ * `[[Idea]]` pointing at nothing. Aliases and headings survive: `[[Idea|the plan]]` → `[[Ideas|the plan]]`.
+ * Only the name is compared, case-insensitively, so an unrelated link is never touched.
+ */
+export function rewriteLinks(content: string, fromNames: string[], toName: string): string {
+  const keys = new Set(fromNames.map((n) => n.trim().toLowerCase()).filter(Boolean));
+  if (keys.size === 0) return content;
+  return content.replace(LINK_FULL, (whole, name: string, rest: string) =>
+    keys.has(name.trim().toLowerCase()) ? `[[${toName}${rest}]]` : whole,
+  );
+}
+
 export function tagsIn(content: string): string[] {
   const out = new Set<string>();
   for (const m of content.matchAll(TAG)) out.add(m[2].toLowerCase());

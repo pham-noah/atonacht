@@ -53,6 +53,23 @@ describe("the link graph", () => {
   });
 });
 
+describe("renaming a note keeps its links", () => {
+  it("rewrites the whole link, keeping the alias and the heading, and leaves look-alike names alone", async () => {
+    const { rewriteLinks } = await import("../lib/backlinks");
+    const before = "See [[Alpha]], [[Alpha|the plan]], [[alpha#Notes]], [[Alphabet]] and [[Beta]].";
+    expect(rewriteLinks(before, ["Alpha"], "Gamma")).toBe(
+      "See [[Gamma]], [[Gamma|the plan]], [[Gamma#Notes]], [[Alphabet]] and [[Beta]].",
+    );
+  });
+
+  it("touches nothing when the note was not renamed", async () => {
+    const { rewriteLinks } = await import("../lib/backlinks");
+    const content = "[[Alpha]] [[Beta]]";
+    expect(rewriteLinks(content, [], "Gamma")).toBe(content);
+    expect(rewriteLinks(content, ["Alpha"], "Alpha")).toBe(content);
+  });
+});
+
 describe("search filters", () => {
   it("reads tag:, due: and is: out of the query and keeps the rest as text", async () => {
     const { parseQuery, noteMatches } = await import("../lib/search");

@@ -9,6 +9,8 @@ import { dailyContent, dailyPath, setDailyDir } from "./lib/daily";
 import { isPinned, setPinned } from "./lib/frontmatter";
 import { DAILY_TEMPLATE, STARTERS, isTemplatePath } from "./lib/templates";
 import { conflictCopyPath, parseConflict } from "./lib/conflicts";
+import { rewriteLinks } from "./lib/backlinks";
+import { plural } from "./lib/plural";
 import { isKanbanNote } from "./lib/boardNote";
 import { Column, moveInContent } from "./lib/kanban";
 import { TaskIndex } from "./lib/taskIndex";
@@ -70,7 +72,7 @@ interface Store {
   emptyTrash: () => Promise<void>;
   /** Deletes trashed notes older than `days` and starts the clock on old ones that have none. Returns how many were deleted. */
   cleanTrash: (days: number) => Promise<number>;
-  renameNote: (from: string, to: string) => Promise<void>;
+  renameNote: (from: string, to: string) => Promise<number>;
   renameFolder: (from: string, to: string) => Promise<void>;
   deleteFolder: (path: string) => Promise<void>;
   moveDailyNotes: (fromDir: string, toDir: string) => Promise<number>;
@@ -327,9 +329,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return plan.purge.length;
     },
     renameNote: async (from, to) => {
-      if (from === to) return;
-      await fs.rename(root, from, to);
+      if (from === to) return 0;
+      const oldName = from.split("/").pop()!.replace(/\.md$/i, "");
+      const newName = to.split("/").pop()!.replace(/\.md$/i, "");
+      // Every note that pointed at the old name goes on pointing at the note, aliases and #headings included:
+      // a rename that silently breaks backlinks is how a folder of notes turns into a folder of orphans.
+      const touched: [string, string][] = []; // path, the content before the rewrite
+      if (newName !== oldName) {
+        for (const [p, n] of Object.entries(ref.current)) {
+          if (p === from || parseConflict(p)) continue; // never rewrite a conflict copy: it is another device's text
+          const next = rewriteLinks(n.content, [oldName], newName);
+          if (next === n.content) continue;
+          touched.push([p, n.content]);
+          await save(p, next);
+        }
+      }
+      try {
+        await fs.rename(root, from, to);
+      } catch (e) {
+        for (const [p, before] of touched) await save(p, before); // the links must not say the new name if the rename did not happen
+        throw e;
+      }
       await refresh();
+      const updated = touched.length;
+      setUndo({
+        label: updated ? `Renamed to “${newName}” · ${plural(updated, "note")} updated` : `Renamed to “${newName}”`,
+        run: async () => {
+          for (const [p, before] of touched) await save(p, before);
+          await fs.rename(root, to, from);
+          await refresh();
+        },
+      });
+      return updated;
     },
     renameFolder: async (from, to) => {
       if (!/^[^/\\.][^/\\]*$/.test(to)) throw new Error("Folder names can’t contain / or start with a dot");
