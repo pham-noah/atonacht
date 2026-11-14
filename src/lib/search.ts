@@ -1,4 +1,5 @@
 import { Task } from "./tasks";
+import { addDays } from "./dates";
 
 /**
  * Search that can be narrowed without a second set of controls: `tag:thesis`, `in:Daily notes`, `due:overdue`,
@@ -71,9 +72,7 @@ export function noteMatches(q: Query, path: string, content: string, tasks: Task
   if (q.has === "task" && mine.length === 0) return false;
   if (q.done !== undefined && !mine.some((t) => t.done === q.done)) return false;
   if (q.due) {
-    const week = new Date(`${today}T00:00:00`);
-    week.setDate(week.getDate() + 7);
-    const limit = week.toISOString().slice(0, 10);
+    const limit = addDays(today, 7); // a local date, not a UTC one: toISOString() would shift it by a day east of Greenwich
     const hit = mine.some((t) => {
       if (q.due === "none") return !t.due;
       if (!t.due) return false;
@@ -87,6 +86,30 @@ export function noteMatches(q: Query, path: string, content: string, tasks: Task
   if (!q.text) return true;
   const needle = q.text.toLowerCase();
   return path.toLowerCase().includes(needle) || lower.includes(needle);
+}
+
+/** Does one task match? The same query language as notes, read against the task's own line rather than the note. */
+export function taskMatches(q: Query, t: Task, today: string): boolean {
+  if (q.tags.length) {
+    const mine = t.tags.map((x) => x.toLowerCase());
+    for (const tag of q.tags) if (!mine.includes(tag)) return false;
+  }
+  if (q.has === "link" && t.links.length === 0) return false;
+  if (q.done !== undefined && t.done !== q.done) return false;
+  if (q.due) {
+    if (q.due === "none") {
+      if (t.due) return false;
+    } else {
+      if (!t.due) return false;
+      if (q.due === "overdue" && (t.done || t.due >= today)) return false;
+      if (q.due === "today" && t.due !== today) return false;
+      if (q.due === "week" && (t.due < today || t.due > addDays(today, 7))) return false;
+    }
+  }
+  if (!q.text) return true;
+  const needle = q.text.toLowerCase();
+  // the title is what is on screen; the rest of the line catches a link or a tag written after it
+  return t.title.toLowerCase().includes(needle) || t.text.toLowerCase().includes(needle) || t.path.toLowerCase().includes(needle);
 }
 
 /** What the query understood, for a one-line hint under the field. */
