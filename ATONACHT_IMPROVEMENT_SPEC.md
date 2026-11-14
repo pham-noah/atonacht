@@ -21,9 +21,9 @@ truth pass) in the third, and F/H/I in this one. The gate was run on the final t
 | 3 | All tasks: search + a Done list that pages (C) | done | `5839f45` |
 | 4 | Local version history (D) | done | `854e0d5` |
 | 5 | README truth pass (E) | done | `c25e1d9` |
-| 6 | Preview richness: quotes, ordered lists, rules, tables (F) | done | this commit |
-| 7 | Downscale a big photo before it is written (H) | done | this commit |
-| 8 | Search results show the matching line, marked (I) | done | this commit |
+| 6 | Preview richness: quotes, ordered lists, rules, tables (F) | done | `a5af002` |
+| 7 | Downscale a big photo before it is written (H) | done | `a5af002` |
+| 8 | Search results show the matching line, marked (I) | done | `a5af002` |
 
 The UI was driven **for real** this time in Chromium (headless, 390×844, 2× DPR) against `vite` with the demo
 file layer, so the claims below have screenshots and DOM assertions behind them, not just unit tests. Evidence
