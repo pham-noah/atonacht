@@ -17,6 +17,7 @@ interface Props {
   onChange: (v: string) => void;
   onToggle: (line: number) => void;
   onLink: (name: string) => void;
+  onExternal: (url: string) => void;
   live: boolean;
   spellcheck: boolean;
 }
@@ -52,7 +53,7 @@ export const LiveEditor = forwardRef<LiveHandle, Props>(function LiveEditor(prop
           keymap.of([...defaultKeymap, ...historyKeymap]),
           markdown(),
           EditorView.lineWrapping,
-          live.current.of(liveMarkdown(cb.current.live, (l) => cb.current.onToggle(l), (n) => cb.current.onLink(n))),
+          live.current.of(liveMarkdown(cb.current.live, (l) => cb.current.onToggle(l), (n) => cb.current.onLink(n), (u) => cb.current.onExternal(u))),
           attrs.current.of(EditorView.contentAttributes.of({ spellcheck: String(cb.current.spellcheck), "aria-label": "Note text", "aria-multiline": "true" })),
           EditorView.updateListener.of((u) => {
             if (u.docChanged && !u.transactions.some((t) => t.annotation(External))) cb.current.onChange(u.state.doc.toString());
@@ -68,7 +69,7 @@ export const LiveEditor = forwardRef<LiveHandle, Props>(function LiveEditor(prop
     if (view.current) applyText(view.current, props.value);
   }, [props.value]);
   useEffect(() => {
-    view.current?.dispatch({ effects: live.current.reconfigure(liveMarkdown(props.live, (l) => cb.current.onToggle(l), (n) => cb.current.onLink(n))) });
+    view.current?.dispatch({ effects: live.current.reconfigure(liveMarkdown(props.live, (l) => cb.current.onToggle(l), (n) => cb.current.onLink(n), (u) => cb.current.onExternal(u))) });
   }, [props.live]);
   useEffect(() => {
     view.current?.dispatch({ effects: attrs.current.reconfigure(EditorView.contentAttributes.of({ spellcheck: String(props.spellcheck), "aria-label": "Note text", "aria-multiline": "true" })) });

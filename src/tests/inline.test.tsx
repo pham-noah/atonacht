@@ -39,6 +39,34 @@ describe("calendar shows the day's own tasks", () => {
   });
 });
 
+describe("links in the preview", () => {
+  it("opens a web link from the note in the browser", async () => {
+    const opened = vi.spyOn(window, "open").mockReturnValue(null);
+    await boot({ "Personal/Reading.md": "# Reading\n\nSee [Google](https://google.com) and try it.\n" });
+    fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
+    fireEvent.click(await screen.findByText("Reading", { selector: ".nt" }));
+    await screen.findByRole("button", { name: "Edit" }); // the note is open in preview
+
+    fireEvent.click(await screen.findByText("Google"));
+    await waitFor(() => expect(opened).toHaveBeenCalledWith("https://google.com", "_blank", "noopener,noreferrer"));
+    opened.mockRestore();
+  });
+
+  it("follows a wiki link by the note's title, not just its file name", async () => {
+    await boot({
+      "Thesis/Deep work.md": "# Methods notes\n\nLong paragraph.\n",
+      "Thesis/Plan.md": "# Plan\n\nGo to [[Methods notes]] next.\n",
+    });
+    fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
+    fireEvent.click(await screen.findByText("Plan", { selector: ".nt" }));
+    await screen.findByRole("button", { name: "Edit" });
+
+    fireEvent.click(await screen.findByText("Methods notes", { selector: "a.wl" }));
+    // the editor now shows the other note: its heading, and its own source in the bar
+    expect(await screen.findByText("Long paragraph.")).toBeTruthy();
+  });
+});
+
 describe("editing one line in the preview", () => {
   it("opens the source line on double-click and writes just that line back", async () => {
     const original = "# Thesis outline\n\nIntro paragraph.\n\n- [ ] Draft methods @due(2026-11-05)\n- [ ] Email supervisor\n";

@@ -41,7 +41,7 @@ describe("LiveEditor component", () => {
   it("reports typing, takes outside updates without echoing them, and ticks a task from its raw checkbox", async () => {
     const onChange = vi.fn();
     const onToggle = vi.fn();
-    const { container, rerender } = render(<LiveEditor value={"- [ ] one\n"} onChange={onChange} onToggle={onToggle} onLink={() => {}} live spellcheck />);
+    const { container, rerender } = render(<LiveEditor value={"- [ ] one\n"} onChange={onChange} onToggle={onToggle} onLink={() => {}} onExternal={() => {}} live spellcheck />);
     const view = EditorView.findFromDOM(container.querySelector(".cm-editor") as HTMLElement)!;
     expect(view.state.doc.toString()).toBe("- [ ] one\n");
     expect(container.querySelectorAll(".cm-box")).toHaveLength(1); // the text "- [ ]" itself is clickable
@@ -51,7 +51,7 @@ describe("LiveEditor component", () => {
     expect(onChange).toHaveBeenLastCalledWith("- [ ] one two\n");
 
     onChange.mockClear();
-    rerender(<LiveEditor value={"- [x] one two\n"} onChange={onChange} onToggle={onToggle} onLink={() => {}} live spellcheck />);
+    rerender(<LiveEditor value={"- [x] one two\n"} onChange={onChange} onToggle={onToggle} onLink={() => {}} onExternal={() => {}} live spellcheck />);
     await waitFor(() => expect(view.state.doc.toString()).toBe("- [x] one two\n"));
     expect(onChange).not.toHaveBeenCalled(); // programmatic updates are not treated as typing
 

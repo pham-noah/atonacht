@@ -1,5 +1,6 @@
 import { shortDate } from "./dates";
 import { frontmatterLines, stripFrontmatter } from "./frontmatter";
+import { externalHref } from "./links";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -13,6 +14,11 @@ function inline(raw: string): string {
   // an image in the folder: rendered by the editor once it has read the bytes (see attachSrc)
   s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt: string, src: string) =>
     `<img class="attach" data-attach="${src}" alt="${alt}" />`);
+  // [text](url): a real link when the scheme is one we open, otherwise it stays exactly as written (see links.ts)
+  s = s.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, (whole, text: string, href: string) => {
+    const url = externalHref(href);
+    return url ? `<a class="ext" href="${url}" data-href="${url}" rel="noopener noreferrer">${text}</a>` : whole;
+  });
   s = s.replace(/@due\((\d{4}-\d{2}-\d{2})\)/g, (_, d) => `<span class="chip">due ${shortDate(d)}</span>`);
   s = s.replace(/@repeat\(([^)]+)\)/g, '<span class="chip">↻ $1</span>');
   s = s.replace(/(^|\s)!(high|med|low)\b/g, '$1<span class="chip hi">$2</span>');

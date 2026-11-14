@@ -7,6 +7,8 @@ import { useStore } from "../store";
 import { isPinned, setPinned } from "../lib/frontmatter";
 import { usePrefs } from "../prefs";
 import { buildLinks } from "../lib/backlinks";
+import { externalHref, noteFor, noteIndex } from "../lib/links";
+import { openExternal } from "../lib/update";
 import { attachmentMarkdown, attachmentName, attachmentPath, mimeOf } from "../lib/attachments";
 import { fs } from "../lib/backend";
 import { noteTitle } from "../lib/markdown";
@@ -111,12 +113,27 @@ export function Editor({ path }: { path: string }) {
   const hasConflict = conflicts.some((c) => c.original === path);
   const [lineEdit, setLineEdit] = useState<{ from: number; to: number } | null>(null);
 
+  // What `[[name]]` resolves to: by file name or by title, exactly as the backlink index resolves it.
+  const linkIndex = useMemo(() => {
+    const titles: Record<string, string> = {};
+    const paths = Object.keys(notes);
+    for (const p of paths) titles[p] = noteTitle(p, notes[p]);
+    return noteIndex(paths, titles);
+  }, [notes]);
+
   const onPreviewClick = (e: React.MouseEvent) => {
     const el = e.target as HTMLElement;
     if (el instanceof HTMLInputElement && el.dataset.line) change(toggleTask(text, Number(el.dataset.line)));
+    const href = el.closest<HTMLElement>("[data-href]")?.dataset.href;
+    if (href) {
+      e.preventDefault();
+      const url = externalHref(href);
+      if (url) void openExternal(url);
+      return;
+    }
     const link = el.closest<HTMLElement>("[data-link]")?.dataset.link;
     if (link) {
-      const hit = Object.keys(notes).find((p) => p.split("/").pop()!.replace(/\.md$/, "").toLowerCase() === link.toLowerCase());
+      const hit = noteFor(link, linkIndex);
       if (hit) flush().then(() => go({ name: "editor", path: hit }));
     }
   };
@@ -138,8 +155,12 @@ export function Editor({ path }: { path: string }) {
   };
 
   const openLink = (link: string) => {
-    const hit = Object.keys(notes).find((p) => p.split("/").pop()!.replace(/\.md$/, "").toLowerCase() === link.toLowerCase());
+    const hit = noteFor(link, linkIndex);
     if (hit) flush().then(() => go({ name: "editor", path: hit }));
+  };
+  const openUrl = (raw: string) => {
+    const url = externalHref(raw);
+    if (url) void openExternal(url);
   };
   const toggleLine = (line: number) => change(toggleTask(latest.current, line, today(), prefs.repeatFrom));
 
@@ -193,7 +214,7 @@ export function Editor({ path }: { path: string }) {
             }
           }}
           style={{ ["--ed-font" as string]: FONTS[prefs.editorFont], ["--ed-size" as string]: `${prefs.editorSize}px`, ["--ed-lh" as string]: prefs.lineHeight }}>
-          <LiveEditor ref={area} value={text} onChange={change} onToggle={toggleLine} onLink={openLink} live={prefs.livePreview} spellcheck={prefs.spellcheck} />
+          <LiveEditor ref={area} value={text} onChange={change} onToggle={toggleLine} onLink={openLink} onExternal={openUrl} live={prefs.livePreview} spellcheck={prefs.spellcheck} />
           {text.trim() === "" && <p className="muted small emptyhint">Start writing. Markdown works here: <span className="mono">#</span> for a heading, <span className="mono">- [ ]</span> for a task, <span className="mono">@due(2026-11-05)</span> for a date.</p>}
         </div>
       ) : (

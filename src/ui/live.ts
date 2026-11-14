@@ -9,6 +9,7 @@ const INLINE: [RegExp, string][] = [
   [/(?<=^|\s)#[\p{L}\p{N}_-]+/gu, "cm-chip"],
   [/@done\(\d{4}-\d{2}-\d{2}\)/g, "cm-dim"],
   [/\[\[[^\]]+\]\]/g, "cm-wl"],
+  [/(?<!!)\[[^\]\n]+\]\((?:https?:\/\/|mailto:)[^)\s]+\)/g, "cm-ext"],
   [/\*\*[^*]+\*\*/g, "cm-strong"],
   [/`[^`]+`/g, "cm-code"],
 ];
@@ -89,7 +90,12 @@ function visibleDecorations(view: EditorView, live: boolean): DecorationSet {
   return buildDecorations(view.state, live, { from: Math.max(0, view.viewport.from - margin), to: view.viewport.to + margin });
 }
 
-export function liveMarkdown(live: boolean, onToggle: (line: number) => void, onLink: (name: string) => void): Extension {
+export function liveMarkdown(
+  live: boolean,
+  onToggle: (line: number) => void,
+  onLink: (name: string) => void,
+  onExternal: (url: string) => void = () => {},
+): Extension {
   const plugin = ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
@@ -117,9 +123,16 @@ export function liveMarkdown(live: boolean, onToggle: (line: number) => void, on
         return false;
       },
       click(e) {
-        const el = (e.target as HTMLElement).closest(".cm-wl");
-        if (el && (e.ctrlKey || e.metaKey)) {
-          onLink(el.textContent!.slice(2, -2));
+        const wl = (e.target as HTMLElement).closest(".cm-wl");
+        if (wl && (e.ctrlKey || e.metaKey)) {
+          onLink(wl.textContent!.slice(2, -2));
+          return true;
+        }
+        // a [text](url) in the note: same modifier as a wiki link, so a plain click still places the caret
+        const ext = (e.target as HTMLElement).closest(".cm-ext");
+        if (ext && (e.ctrlKey || e.metaKey)) {
+          const url = /\]\(([^)\s]+)\)$/.exec(ext.textContent ?? "")?.[1];
+          if (url) onExternal(url);
           return true;
         }
         return false;

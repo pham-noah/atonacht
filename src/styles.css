@@ -157,6 +157,8 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .page:focus{outline:none}
 .preview h1,.preview h2,.preview h3{font:500 24px Fraunces,Georgia,serif;margin:16px 0 6px}
 .preview p{margin:6px 0}.preview a.wl{color:var(--hiT);cursor:pointer}
+/* a link to the web looks like a link: under it, and it takes keyboard focus so Enter opens it */
+.preview a.ext{color:var(--hiT);cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--acc) 55%,transparent);text-underline-offset:2px}
 .preview code,.preview pre{font-family:ui-monospace,monospace;background:var(--chip);border-radius:6px;padding:0 4px}
 .md-task{display:flex;gap:10px;align-items:center;min-height:36px}.md-task.done span{color:var(--muted);text-decoration:line-through}
 .md-li{padding:2px 0}
@@ -257,7 +259,7 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .cm-box:hover{background:var(--chip)}.cm-boxdone{color:var(--muted)}
 .cm-taskdone{color:var(--muted)}.cm-taskdone .cm-chip{opacity:.7}
 .cm-chip{font-size:.8em;padding:1px 7px;border-radius:999px;background:var(--chip)}.cm-hi{background:var(--hiB);color:var(--hiT)}
-.cm-dim{color:var(--muted);font-size:.8em}.cm-wl{color:var(--hiT)}.cm-strong{font-weight:700}
+.cm-dim{color:var(--muted);font-size:.8em}.cm-wl{color:var(--hiT)}.cm-ext{color:var(--hiT);text-decoration:underline}.cm-strong{font-weight:700}
 .cm-code,.cm-fence{font-family:ui-monospace,monospace;background:var(--chip);border-radius:4px}
 
 .compact .row{min-height:38px}.compact .navitem{min-height:34px}.compact .noterow{padding:8px 0}.compact .card{padding:12px}
