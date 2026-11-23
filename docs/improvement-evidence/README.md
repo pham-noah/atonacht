@@ -23,6 +23,21 @@ picture is the app running, not a mock. Screenshots are full-viewport.
 | `attachment-written-line.png` | The line the attach wrote into the note: `![big.jpg](Attachments/2026-11-14-222112-big.jpg)` — the picture is a file in `Attachments/`, not inline data. |
 | `search-hit-line.png` | Searching `rent` in a 41-line note shows `- [ ] Pay rent by Friday` with **rent** marked, not the note's opening line. |
 
+## Eighth pass (2026-11-23) — a conflict copy stays home, and the preview reads like CommonMark
+
+Desktop 1280×860 and phone 760×430, demo file layer. See §0e of the spec. A note was seeded with a setext title,
+`> outer` over `> > inner`, a `js` fence, `~~struck~~`, `__bold__`, `_em_`, an angle-bracket link, a hard break and a
+backslash escape, then opened in the reading view.
+
+| File | What it proves |
+|------|----------------|
+| `eighth-pass/01-commonmark-in-the-reading-view.png` | Every construct renders: the setext title as a heading, the outer line outside the inner quote's second border, the fence as one padded block on two lines, the hard break after "spaces", and `\*not italic\*` showing its asterisks. |
+| `eighth-pass/02-commonmark-at-desktop.png` | The same note at 1280 wide, nothing clipped: `set_preference_now` untouched by `_…_`, `<https://…>` a real link, the code block scrolling sideways rather than wrapping. |
+
+Not a picture: the push tree a GitHub sync sends, read back from the fake server in `githubsync.test.ts` — for a
+folder holding `Note.md`, `Note (github).md`, `Note (conflict 2026-11-23).md`, `Note (conflict 2026-11-23) 2.md`
+and `Notes about (conflict rules).md`, what goes up is `New.md`, `Note.md`, `Notes about (conflict rules).md`.
+
 ## Seventh pass (2026-11-23) — words for dates, and today by default
 
 Desktop 1280×800 and phone 390×844, demo file layer. See §0d of the spec.

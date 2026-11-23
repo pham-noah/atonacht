@@ -34,7 +34,9 @@ export function createMemFs(seed?: Store, persist = false): NotesFs {
   if (persist && typeof localStorage !== "undefined") {
     try {
       const raw = localStorage.getItem(KEY);
-      store = raw ? JSON.parse(raw) : demoSeed();
+      // a store written by an older version may lack a field: fill it in rather than crashing the whole screen
+      const parsed = raw ? (JSON.parse(raw) as Partial<Store>) : demoSeed();
+      store = { files: parsed?.files ?? {}, dirs: parsed?.dirs ?? [] };
     } catch {
       store = demoSeed();
     }

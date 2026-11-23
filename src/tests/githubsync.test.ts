@@ -32,6 +32,7 @@ function fakeGitHub(remoteFiles: Record<string, string>) {
   });
   let refSha = "head1";
   const pushed: Record<string, string> = {};
+  let treeSent: string[] = [];
   const fetcher: Fetcher = async (url, init) => {
     const path = url.replace("https://api.github.com", "");
     const reply = (status: number, body: unknown) => ({ ok: status < 400, status, json: async () => body });
@@ -47,13 +48,16 @@ function fakeGitHub(remoteFiles: Record<string, string>) {
       pushed[body.content] = body.content;
       return reply(201, { sha: `n${Object.keys(pushed).length}` });
     }
-    if (path.endsWith("/git/trees") && init?.method === "POST") return reply(201, { sha: "tree2" });
+    if (path.endsWith("/git/trees") && init?.method === "POST") {
+      treeSent = (JSON.parse(init.body!) as { tree: { path: string }[] }).tree.map((e) => e.path);
+      return reply(201, { sha: "tree2" });
+    }
     if (path.endsWith("/git/commits") && init?.method === "POST") return reply(201, { sha: "commit2" });
     const blob = path.match(/\/git\/blobs\/([^?]+)$/);
     if (blob) return reply(200, { content: btoa(blobs.get(blob[1]) ?? "") });
     return reply(404, {});
   };
-  return { fetcher, pushed };
+  return { fetcher, pushed, sent: () => treeSent };
 }
 
 describe("syncing with GitHub", () => {
@@ -88,6 +92,27 @@ describe("syncing with GitHub", () => {
     expect(out.kept).toEqual(["Note.md"]);
     expect(saved["Note (github).md"]).toBe("mine\n");
     expect(out.added).toEqual([]);
+  });
+
+  it("does not push the copies a conflict left behind", async () => {
+    const gh = fakeGitHub({ "New.md": "# New\n" });
+    const out = await syncWithGitHub({
+      repo: { owner: "o", repo: "r" },
+      branch: "main",
+      token: "t",
+      notes: {
+        "Note.md": "mine\n",
+        "Note (github).md": "theirs\n", // this device's answer to a divergence
+        "Note (conflict 2026-11-23).md": "kept by hand\n", // a copy someone chose to keep
+        "Note (conflict 2026-11-23) 2.md": "kept twice\n",
+        "Notes about (conflict rules).md": "a real note that happens to say conflict\n",
+      },
+      save: async () => {},
+      fetcher: gh.fetcher,
+    });
+    expect(out.pushed?.commit).toBe("commit2");
+    // note.md and the remote's New.md go up; the three copies stay here
+    expect(gh.sent().sort()).toEqual(["New.md", "Note.md", "Notes about (conflict rules).md"]);
   });
 });
 

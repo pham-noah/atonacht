@@ -230,7 +230,7 @@ describe("privacy options on Android", () => {
     vi.resetModules();
     localStorage.setItem("atonacht.prefs", JSON.stringify({ onboarded: true, root: "demo" }));
     const { PrefsProvider } = await import("../prefs");
-    const { PrivacyPanel } = await import("../ui/SettingsPanels");
+    const { PrivacyPanel } = await import("../ui/SettingsPrivacy");
     const { rerender } = render(<PrefsProvider><PrivacyPanel available android={false} /></PrefsProvider>);
     expect(screen.queryByLabelText(/Hide content in recent apps/)).toBeNull();
     rerender(<PrefsProvider><PrivacyPanel available android /></PrefsProvider>);

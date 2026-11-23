@@ -6,10 +6,19 @@ const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function inline(raw: string): string {
-  let s = esc(raw);
-  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  const kept: string[] = [];
+  const hold = (html: string) => `\u0000${kept.push(html) - 1}\u0000`;
+  // a backslash before punctuation is that character, not markup (CommonMark 2.4)
+  let s = raw.replace(/\\([\\`*_{}[\]()#+\-.!>~|])/g, (_m, c: string) => hold(esc(c)));
+  s = esc(s);
+  // code first: what sits between backticks is never emphasised, linked or chipped
+  s = s.replace(/`([^`\n]+)`/g, (_m, c: string) => hold(`<code>${c}</code>`));
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(?<![\w])__([^_]+)__(?![\w])/g, "<strong>$1</strong>");
   s = s.replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
+  // underscore emphasis only between non-word edges, so snake_case and file_names stay as written
+  s = s.replace(/(?<![\w])_([^_\s][^_]*)_(?![\w])/g, "<em>$1</em>");
+  s = s.replace(/~~([^~]+)~~/g, "<del>$1</del>");
   s = s.replace(/\[\[([^\]]+)\]\]/g, '<a class="wl" data-link="$1">$1</a>');
   // an image in the folder: rendered by the editor once it has read the bytes (see attachSrc)
   s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt: string, src: string) =>
@@ -19,13 +28,20 @@ function inline(raw: string): string {
     const url = externalHref(href);
     return url ? `<a class="ext" href="${url}" data-href="${url}" rel="noopener noreferrer">${text}</a>` : whole;
   });
+  // <https://…> and <me@example.com>: a bare address in angle brackets is a link
+  s = s.replace(/&lt;(https?:\/\/[^\s&]+)&gt;/g, (whole, url: string) => {
+    const u = externalHref(url);
+    return u ? `<a class="ext" href="${u}" data-href="${u}" rel="noopener noreferrer">${url}</a>` : whole;
+  });
+  s = s.replace(/&lt;([\w.+-]+@[\w-]+\.[\w.-]+)&gt;/g, (_m, mail: string) =>
+    `<a class="ext" href="mailto:${mail}" data-href="mailto:${mail}" rel="noopener noreferrer">${mail}</a>`);
   s = s.replace(/@due\((\d{4}-\d{2}-\d{2})\)/g, (_, d) => `<span class="chip">due ${shortDate(d)}</span>`);
   // Every list stamps a finished task with the day it was done; the reading view used to leave that raw in the text.
   s = s.replace(/@done\((\d{4}-\d{2}-\d{2})\)/g, (_, d) => `<span class="chip done">done ${shortDate(d)}</span>`);
   s = s.replace(/@repeat\(([^)]+)\)/g, '<span class="chip">↻ $1</span>');
   s = s.replace(/(^|\s)!(high|med|low)\b/g, '$1<span class="chip hi">$2</span>');
   s = s.replace(/(^|\s)#([\p{L}\p{N}_-]+)/gu, '$1<span class="chip">#$2</span>');
-  return s;
+  return s.replace(/\u0000(\d+)\u0000/g, (_m, n: string) => kept[Number(n)]);
 }
 
 /** One rendered block, with the source lines it came from (0-based, inclusive). */
@@ -39,11 +55,41 @@ export interface Block {
 const splitLines = (src: string) => src.split(/\x0d?\n/);
 
 const RULE = /^ {0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/;
-const QUOTE = /^\s{0,3}>\s?(.*)$/;
+const QUOTE = /^ {0,3}((?:> ?)+)(.*)$/;
 const ORDERED = /^(\s*)(\d{1,9})[.)]\s+(.*)$/;
 const DELIM_CELL = /^:?-+:?$/;
 
-/** The cells of a `| a | b |` row, with the outer pipes dropped. */
+/** A paragraph's lines, joined the way CommonMark does: a space, or a break when the line asked for one. */
+function paraHtml(lines: { text: string; brk: boolean }[]): string {
+  return lines
+    .map((l, k) => inline(l.text) + (k === lines.length - 1 ? "" : l.brk ? "<br>" : " "))
+    .join("");
+}
+
+/** One fenced block is one <pre>: a code sample used to arrive as one element per line. */
+function pre(f: { lang: string; lines: string[] }): string {
+  return `<pre${f.lang ? ` class="language-${esc(f.lang)}"` : ""}><code>${f.lines.map(esc).join("\n")}</code></pre>`;
+}
+
+/** A run of quotes, nested as deep as each line asked, so "> a" over "> > b" reads as a quote inside a quote. */
+function quoteHtml(lines: { text: string; depth: number }[]): string {
+  let html = "";
+  let open = 0;
+  for (const l of lines) {
+    while (open < l.depth) {
+      html += "<blockquote>";
+      open++;
+    }
+    while (open > l.depth) {
+      html += "</blockquote>";
+      open--;
+    }
+    html += `${inline(l.text)} `;
+  }
+  html += "</blockquote>".repeat(open);
+  return html.replace(/\s+(<\/?blockquote>)/g, "$1");
+}
+
 function cells(line: string): string[] {
   return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
 }
@@ -68,13 +114,13 @@ const alignment = (cell: string) => {
 export function renderBlocks(src: string): Block[] {
   const out: Block[] = [];
   const lines = splitLines(src);
-  let fenced = false;
-  let para: { text: string[]; from: number; to: number } | null = null;
-  let quote: { text: string[]; from: number; to: number } | null = null;
+  let fenced: { lang: string; lines: string[]; from: number; to: number } | null = null;
+  let para: { lines: { text: string; brk: boolean }[]; from: number; to: number } | null = null;
+  let quote: { lines: { text: string; depth: number }[]; from: number; to: number } | null = null;
   // a paragraph and a blockquote are never open at the same time, so one flush closes whichever is
   const flush = () => {
-    if (para) out.push({ html: `<p>${inline(para.text.join(" "))}</p>`, from: para.from, to: para.to });
-    if (quote) out.push({ html: `<blockquote>${inline(quote.text.join(" "))}</blockquote>`, from: quote.from, to: quote.to });
+    if (para) out.push({ html: `<p>${paraHtml(para.lines)}</p>`, from: para.from, to: para.to });
+    if (quote) out.push({ html: quoteHtml(quote.lines), from: quote.from, to: quote.to });
     para = null;
     quote = null;
   };
@@ -83,19 +129,34 @@ export function renderBlocks(src: string): Block[] {
     const line = lines[i];
     if (/^\s*```/.test(line)) {
       flush();
-      fenced = !fenced;
+      if (fenced) {
+        out.push({ html: pre(fenced), from: fenced.from, to: i });
+        fenced = null;
+      } else {
+        fenced = { lang: line.trim().slice(3).trim(), lines: [], from: i, to: i };
+      }
       continue;
     }
     if (fenced) {
-      out.push({ html: `<pre>${esc(line)}</pre>`, from: i, to: i });
+      fenced.lines.push(line);
+      fenced.to = i;
       continue;
     }
-    const h = /^(#{1,3})\s+(.*)$/.exec(line);
+    const h = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
     const t = /^(\s*)[-*+] \[([ xX])\] ?(.*)$/.exec(line);
     const li = /^(\s*)[-*+]\s+(.*)$/.exec(line);
     const ol = ORDERED.exec(line);
     const q = QUOTE.exec(line);
-    if (h) {
+    // "Title" over "=====" or "-----" is a heading, and it wins over the rule it would otherwise be
+    const setext =
+      para && para.to === i - 1 && /^ {0,3}(=+|-{3,})\s*$/.test(line)
+        ? line.trim()[0] === "=" ? 1 : 2
+        : 0;
+    if (setext) {
+      // the whole paragraph above the line becomes the heading: "One\ntwo\n===" is an h1 reading "One two"
+      out.push({ html: `<h${setext}>${paraHtml(para!.lines)}</h${setext}>`, from: para!.from, to: i });
+      para = null;
+    } else if (h) {
       flush();
       out.push({ html: `<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`, from: i, to: i });
     } else if (t) {
@@ -139,18 +200,26 @@ export function renderBlocks(src: string): Block[] {
       i = j - 1; // the loop's own i++ lands on the first line after the table
     } else if (q) {
       if (para) flush(); // a quote starts a block of its own
-      if (!quote) quote = { text: [], from: i, to: i };
-      quote.text.push(q[1].trim());
+      if (!quote) quote = { lines: [], from: i, to: i };
+      quote.lines.push({ text: q[2].trim(), depth: (q[1].match(/>/g) ?? []).length || 1 });
       quote.to = i;
     } else if (line.trim() === "") flush();
     else {
       if (quote) flush();
-      if (!para) para = { text: [], from: i, to: i };
-      para.text.push(line.trim());
+      if (!para) para = { lines: [], from: i, to: i };
+      // two trailing spaces or a backslash is a hard break (CommonMark 6.8); the backslash itself is not shown
+      const bare = line.replace(/\s+$/, "");
+      const hard = / {2,}$/.test(line) || bare.endsWith("\\");
+      para.lines.push({ text: hard && bare.endsWith("\\") ? bare.slice(0, -1).trim() : line.trim(), brk: hard });
       para.to = i;
     }
   }
   flush();
+  if (fenced) {
+    // a fence that never closes keeps its lines; a trailing newline is not one of them
+    const kept = fenced.lines.filter((l, k) => !(k === fenced!.lines.length - 1 && l === ""));
+    out.push({ html: pre({ ...fenced, lines: kept }), from: fenced.from, to: fenced.to });
+  }
   return out;
 }
 

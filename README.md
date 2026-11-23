@@ -125,7 +125,7 @@ Daily notes are `Daily notes/YYYY-MM-DD.md` (folder configurable). Paths startin
 
 ```bash
 npm install
-npm test                  # 247 unit and UI tests
+npm test                  # 287 unit and UI tests
 npm run dev               # browser demo with sample notes: no real files, no notifications
 npm run tauri dev         # desktop app
 npm run tauri build       # desktop installers
@@ -161,22 +161,23 @@ Measured in a build sandbox, not on a phone:
 src/lib/        pure logic (tasks, repeats, daily notes, carry-over, conflicts, diff, markdown, reminders, weekly)
 src/lib/        file layers: tauriFs (desktop), safFs (Android folder picker), memFs (browser demo)
 src/store.tsx   loads all notes, polls for changes, writes through the file layer
-src/ui/         screens, live editor (live.ts + LiveEditor.tsx), settings
+src/ui/         screens, live editor (live.ts + LiveEditor.tsx), settings (SettingsParts + one panel file per tab)
 src-tauri/src/notes_fs.rs   desktop file layer (path safety, atomic saves, trash, watcher filter), unit tested
 android/ scripts/           widget, share receiver, manifest, boot theme; .github/ CI and release builds
 ```
 
 ## What is verified
 
-- `tsc --noEmit`, the production web build, and **247 JavaScript tests**: task parsing, repeats, carry-over, conflicts
+- `tsc --noEmit`, the production web build, and **287 JavaScript tests**: task parsing, repeats, carry-over, conflicts
   and diff, pins, templates, week maths, reminders, editor decorations, per-line preview editing, calendar day tasks,
   update checking, torn and concurrent saves, folder counts, startup-cache retry, paged notes, the Android folder layer
   against a fake document provider, tab swipes, the back gesture, swipe-to-delete with undo, external links and their
   scheme allow-list, wiki links by title, rename that rewrites inbound links with one Undo, task search and the paged Done
   list, the local version store (five kept, duplicates dropped, restore writes the old text back), the preview's
-  blockquotes, ordered lists, rules and tables, downscaling a big photo before it is written, and the matching line in
-  a search result.
-- `cargo test`: **12 Rust tests** for the desktop file layer.
+  blockquotes, ordered lists, rules and tables, CommonMark's setext headings, fenced code gathered into one block, nested
+  quotes, hard line breaks, backslash escapes, `_em_`/`__strong__`/`~~strike~~` and angle-bracket links, downscaling a big
+  photo before it is written, and the matching line in a search result.
+- `cargo test`: **16 Rust tests** for the desktop file layer.
 - CI is green: types, tests and web build; the Rust shell; desktop installers on Linux, Windows and macOS; an Android APK
   built and signed from the release keystore.
 - The Windows build has been launched and renders; the main screens were reviewed in Chromium at 390×844 and 1280×800 in

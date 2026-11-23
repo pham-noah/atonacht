@@ -1,4 +1,5 @@
 import { Fetcher, Repo, pullNotes, pushNotes } from "./github";
+import { isConflictPath, isKeptCopy } from "./conflicts";
 
 export interface SyncOutcome {
   commit: string;
@@ -47,7 +48,11 @@ export async function syncWithGitHub(opts: {
   const remote = await pullNotes(repo, branch, token, fetcher);
   const out: SyncOutcome = { commit: remote.commit, added: [], kept: [], merged: [], pushed: null };
 
-  const next: Record<string, string> = { ...notes };
+  // Copies stay out of the repository. `X (github).md` is this device's answer to a divergence and `X (conflict …).md`
+  // is a copy a person chose to keep; pushing either sends every other device a duplicate, and the next sync hands
+  // it back as a conflict of its own.
+  const next: Record<string, string> = {};
+  for (const [path, text] of Object.entries(notes)) if (!isConflictPath(path) && !isKeptCopy(path)) next[path] = text;
   for (const [path, text] of Object.entries(remote.files)) {
     const here = notes[path];
     if (here === undefined) {

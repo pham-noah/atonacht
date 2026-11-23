@@ -33,6 +33,12 @@ export function parseConflict(path: string): ConflictName | null {
 
 export const isConflictPath = (p: string) => parseConflict(p) !== null;
 
+// What "keep both" writes: "Note (conflict 2026-11-23).md", and "… (conflict 2026-11-23) 2.md" when taken.
+const KEPT = /^(.*) \(conflict \d{4}-\d{2}-\d{2}\)(?: \d+)?(\.[^./]+)?$/;
+
+/** A copy a person chose to keep. A local answer to a divergence — never something to push at anyone else. */
+export const isKeptCopy = (p: string) => KEPT.test(p);
+
 /** Where "keep both" saves the other version. */
 export function conflictCopyPath(original: string, stamp: string): string {
   const dot = original.lastIndexOf(".");

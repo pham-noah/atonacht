@@ -112,6 +112,46 @@ Gate on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **270/270 pas
 covering 20 readings and `naturaladd.test.tsx` covering the boxes and the migration), `npm run build` clean.
 Evidence: `docs/improvement-evidence/seventh-pass/`.
 
+## 0e. Status — eighth pass (2026-11-23): a conflict copy never travels, and the preview reads like CommonMark
+
+Four things done together, because they are the last ones standing between the tree and `0.3.0`.
+
+**A copy made to resolve a conflict stays on the device that made it.** `syncWithGitHub` built its push tree with
+`{ ...notes }`, so every file in the folder went up — including `Plan (github).md`, `Plan.sync-conflict-20261123-…`
+and the copies *Keep both* writes. Every other device then received a duplicate, and its next sync handed that
+duplicate back as a fresh conflict. `src/lib/githubSync.ts` now skips paths matching `isConflictPath` or
+`isKeptCopy`; an ordinary note that happens to contain the word ("Notes about (conflict rules).md") still pushes.
+Driven against a fake GitHub that records the tree it was sent: `["New.md", "Note.md", "Notes about (conflict
+rules).md"]` for a folder holding `Note (github).md`, `Note (conflict 2026-11-23).md` and
+`Note (conflict 2026-11-23) 2.md` as well.
+
+**`SettingsPanels.tsx` split.** One 862-line file became six: `SettingsAppearance`, `SettingsEditor`,
+`SettingsSync`, `SettingsGitHub`, `SettingsSyncthing`, `SettingsFiles`, `SettingsPrivacy` — each one panel group,
+`SettingsParts` left as the shared kit, `Settings.tsx` importing the panels it renders. No behaviour change;
+`tsc` and the panel tests were the check.
+
+**The preview reads like CommonMark.** Fixed where the old line-at-a-time renderer plainly disagreed with the spec:
+
+| Was | Now |
+|---|---|
+| a fenced sample arrived as one `<pre>` **per line** | one `<pre class="language-…"><code>` holding the block, with room and sideways scroll |
+| `Title` over `=====` / `-----` was a paragraph and a rule | `<h1>` / `<h2>`, and a rule only when no text sits above |
+| `#### ` and deeper were plain paragraphs | `<h4>`–`<h6>`, closing hashes dropped |
+| `> > inner` printed a literal second `>` | a `<blockquote>` inside a `<blockquote>`, and `> a` over `> > b` keeps `a` outside the inner quote |
+| two trailing spaces or a trailing `\` did nothing | `<br>`, with the backslash not shown |
+| `\*not italic\*` was emphasis with the backslashes visible | `*not italic*`, literally |
+| `__strong__` / `_em_` / `~~strike~~` were literal | bold, italic, struck — and `set_preference_now` is still left alone |
+| `<https://example.com/x>` was escaped text | a link; `<me@example.com>` a `mailto:`; `<script>` still escaped |
+| `` `a * b #tag` `` was chipped and emphasised inside | literal code |
+
+A stored browser-demo store missing a field used to white-screen the app — `Cannot read properties of undefined
+(reading 'filter')`, hit live while seeding a note. `createMemFs` now fills `files`/`dirs` and keeps an
+intentionally emptied store empty instead of re-seeding over it.
+
+Gate on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **287/287 passing** (49 files; `commonmark.test.ts`
+13 cases, `demostore.test.ts` 3), `cargo test` **16/16**, `npm run build` clean. README's counts were stale (247
+tests, 12 Rust tests) and are now 287 and 16. Evidence: `docs/improvement-evidence/eighth-pass/`.
+
 ### Item 1 — links (done)
 
 - `renderMarkdown("see [Google](https://google.com)")` → one `a.ext` with `href`/`data-href` and
@@ -258,7 +298,7 @@ write can only be undone if GitHub is configured; README numbers have drifted.
 | D | Local per-note version history (last N saves) restorable from History, no GitHub needed | M | high |
 | E | README/docs truth pass (test counts, bundle size, what is verified) | S | medium |
 | F | Preview: tables, ordered lists, blockquotes, `---` (today everything but `-` lists and headings is a paragraph) — **done, §0 item 6** | M | medium |
-| G | Split `src/ui/SettingsPanels.tsx` (833 lines, the largest file in `src/`) into one file per panel | M | low (churn risk) |
+| G | Split `src/ui/SettingsPanels.tsx` (833 lines, the largest file in `src/`) into one file per panel — **done, §0e** | M | low (churn risk) |
 | H | Attachments: downscale large pasted photos before writing (a 12 MP phone photo lands at full size) — **done, §0 item 7** | M | medium |
 | I | Search: highlight the matching line in results instead of the note's opening line — **done, §0 item 8** | S | medium |
 
@@ -345,7 +385,7 @@ the initial `index` chunk (README: 72 KB), and the "Known gaps" list will be out
 ## 5. Deliberately not proposed
 
 - **iOS** and **a real file watcher on Android** are product decisions with platform work, not audit fixes.
-- **Splitting `SettingsPanels.tsx`** (G) is real debt but pure churn while the feature list is still moving.
+- **Splitting `SettingsPanels.tsx`** (G) was real debt and pure churn; it has since been done anyway, in §0e.
 - **Bundle trimming**: the 511 kB `Editor` chunk is CodeMirror, already lazy-loaded after first paint; the
   86.7 kB initial payload is fine for a Tauri app that ships its own assets.
 
@@ -365,11 +405,11 @@ Items 1-5 of §4 landed in the second and third pass, F/H/I in the fourth (§0 i
 
 What is deliberately untouched:
 
-- **§3 G (split `SettingsPanels.tsx`)** and bundle trimming stay unproposed for the reasons in §5: real debt, pure churn
-  while the feature list is still moving.
-- **The long tail of Markdown** that F does not cover: nested quotes, tables inside list items, `\|` escapes, setext
-  headings (`Title` under `===`), reference links and footnotes. Each is rare in these notes, and the renderer's job is
-  the shapes people write, not CommonMark conformance; a real parser would be the answer if that ever changes.
+- **§3 G (split `SettingsPanels.tsx`)** was left unproposed as pure churn and has since been done (§0e); bundle
+  trimming still stays unproposed for the reason in §5.
+- **The long tail of Markdown** beyond §0e: tables inside list items, `\|` escapes, reference links and footnotes.
+  Nested quotes, setext headings and fenced blocks were rare in these notes but cheap to get right, so they are in;
+  the rest still wants a real parser rather than more regexes.
 
 Two things the local history deliberately does *not* do, so nobody reads them into the code:
 

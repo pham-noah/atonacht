@@ -156,7 +156,7 @@ describe("markdown blocks the preview used to flatten", () => {
 
   it("leaves a line with a pipe that is not a table alone", () => {
     expect(renderMarkdown("a | b\n\nnext")).toBe("<p>a | b</p>\n<p>next</p>");
-    expect(renderMarkdown("a | b\n---")).toContain("<p>a | b</p>"); // --- under text is not a table's header rule
+    expect(renderMarkdown("a | b\n---")).toBe("<h2>a | b</h2>"); // "---" under text is a heading, not a table's header rule and not a rule
   });
 
   it("does not read a note's front matter as a rule or a table", () => {
