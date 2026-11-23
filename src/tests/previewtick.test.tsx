@@ -46,3 +46,35 @@ describe("ticking a task in the reading view", () => {
     expect(files()["Notes/Work.md"].content).toContain(`@done(${today()})`);
   });
 });
+
+describe("the note bar", () => {
+  it("offers the formatting toolbar only while editing, and keeps the trash in the note's own menu", async () => {
+    await boot({ "Notes/Work.md": "# Work\n\n- [ ] Send the invoice\n" });
+    fireEvent.click(within(document.querySelector(".side") as HTMLElement).getAllByRole("button", { name: /^Notes$/ })[0]);
+    const row = await waitFor(() => {
+      const r = rows().find((x) => x.querySelector(".nt")?.textContent === "Work")!;
+      expect(r).toBeTruthy();
+      return r;
+    });
+    fireEvent.click(row);
+
+    // Opening a note reads it: the format buttons drive a textarea that is not mounted, so they are not there at all.
+    await screen.findByText("Send the invoice");
+    expect(document.querySelector(".toolbar")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Bold" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    const bar = await waitFor(() => {
+      const t = document.querySelector(".toolbar");
+      expect(t).toBeTruthy();
+      return t as HTMLElement;
+    });
+    expect(within(bar).getByRole("button", { name: "Bold" })).toBeTruthy();
+    // Delete used to sit in the toolbar, one slip from the space bar; it is now two taps deep and red.
+    expect(within(bar).queryByRole("button", { name: "Delete note" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Note options" }));
+    expect(await screen.findByRole("menuitem", { name: "Note history" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Move to trash" })).toBeTruthy();
+  });
+});

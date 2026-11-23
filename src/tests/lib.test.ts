@@ -5,8 +5,32 @@ import { addTask, editTask, groupTasks, parseTasks, toggleTask } from "../lib/ta
 import { applyCarryOver, dailyPath, dailyTemplate, findCarryOver } from "../lib/daily";
 import { conflictCopyPath, freeCopyPath, isConflictPath, parseConflict } from "../lib/conflicts";
 import { diffLines } from "../lib/diff";
-import { matchSnippet, noteTitle, renderBlocks, renderMarkdown, snippet } from "../lib/markdown";
+import { matchSnippet, noteTitle, renderBlocks, renderMarkdown, snippet, snippetIsQuote } from "../lib/markdown";
 import { createMemFs } from "../lib/memFs";
+
+describe("the line a row shows under its title", () => {
+  it("is prose: no quote, bullet, number, rule or table markers", () => {
+    expect(snippet("# Roadmap\n\n> A note about what comes next.")).toBe("A note about what comes next.");
+    expect(snippet("# Groceries\n\n- Milk\n- Bread")).toBe("Milk Bread");
+    expect(snippet("1. First\n2. Second")).toBe("First Second");
+    expect(snippet("Text\n\n---\n\nMore")).toBe("Text More");
+    expect(snippet("| a | b |\n|---|---|\n| 1 | 2 |")).toBe("a · b 1 · 2");
+    expect(snippet("> quoted *emphasis*")).toBe("quoted *emphasis*");
+  });
+
+  it("drops a task's priority marker, and keeps task lines out altogether", () => {
+    expect(snippet("Coffee beans !high")).toBe("Coffee beans");
+    expect(snippet("- [ ] hidden\nreal text")).toBe("real text");
+    expect(snippet("- Milk !med\n- Bread !low")).toBe("Milk Bread");
+  });
+
+  it("says when the opener is a quote, so the row can draw one", () => {
+    expect(snippetIsQuote("# A\n\n> quoted")).toBe(true);
+    expect(snippetIsQuote("# A\n\n>quoted")).toBe(true);
+    expect(snippetIsQuote("# A\n\nplain")).toBe(false);
+    expect(snippetIsQuote("")).toBe(false);
+  });
+});
 
 describe("repeat rules", () => {
   it("handles daily, weekdays, weekly and monthly", () => {

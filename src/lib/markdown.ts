@@ -248,11 +248,30 @@ export function noteTitle(path: string, content: string): string {
 }
 
 export function snippet(content: string, max = 90): string {
-  const body = splitLines(stripFrontmatter(content))
-    .filter((l) => l.trim() && !/^#/.test(l) && !/^\s*[-*+] \[[ xX>]\]/.test(l))
-    .join(" ")
-    .replace(/\s+/g, " ");
+  const body = snippetLine(content);
   return body.length > max ? body.slice(0, max - 1) + "…" : body;
+}
+
+/**
+ * The one line a row shows, with every markdown marker taken off: a blockquote, a bullet, a numbered item, a
+ * rule or a table pipe is scaffolding for the writer, not prose for the reader.
+ */
+function snippetLine(content: string): string {
+  return splitLines(stripFrontmatter(content))
+    .filter((l) => l.trim() && !/^#/.test(l) && !/^\s*[-*+] \[[ xX>]\]/.test(l))
+    .map((l) => l.replace(/^\s*(?:>\s*)+/, "").replace(/^\s*(?:[-*+]|\d+[.)])\s+/, "").replace(/\s*!(high|med|low)\b/gi, ""))
+    .filter((l) => l.trim() && !/^\s*([-*_]\s*){3,}$/.test(l) && !/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l))
+    .map((l) => l.includes("|") ? l.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((c) => c.trim()).filter(Boolean).join(" · ") : l)
+    .filter((l) => l.trim())
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** True when the first line a row would show is a quote, so the row can draw it as one. */
+export function snippetIsQuote(content: string): boolean {
+  const line = splitLines(stripFrontmatter(content)).find((l) => l.trim() && !/^#/.test(l) && !/^\s*[-*+] \[[ xX>]\]/.test(l));
+  return !!line && /^\s*>/.test(line);
 }
 
 /** A search hit cut into the text before it, the term itself, and the text after, so the row can mark the term. */

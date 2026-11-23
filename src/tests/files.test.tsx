@@ -2,6 +2,12 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
+/** A note's history, rename, pin and trash all live behind one button in its bar. */
+async function openNoteMenu() {
+  fireEvent.click(await screen.findByRole("button", { name: "Note options" }));
+}
+
+
 beforeAll(() => {
   window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
   localStorage.setItem("atonacht.prefs", JSON.stringify({ onboarded: true, root: "demo", theme: "glass", accent: "blue", carryDismissed: "" }));
@@ -19,7 +25,8 @@ describe("file management", () => {
     // rename + move a note from the editor
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
     fireEvent.click(await screen.findByText("Packing list", { selector: ".nt" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Rename or move note" }));
+    openNoteMenu();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Rename or move" }));
     fireEvent.change(await screen.findByLabelText("Note name"), { target: { value: "Trip checklist" } });
     fireEvent.change(screen.getByLabelText("Folder"), { target: { value: "Game ideas" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));

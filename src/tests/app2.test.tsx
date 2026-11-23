@@ -2,6 +2,12 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
+/** A note's history, rename, pin and trash all live behind one button in its bar. */
+async function openNoteMenu() {
+  fireEvent.click(await screen.findByRole("button", { name: "Note options" }));
+}
+
+
 beforeAll(() => {
   window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
   localStorage.setItem("atonacht.prefs", JSON.stringify({ onboarded: true, root: "demo", theme: "solid", accent: "teal", carryDismissed: "" }));
@@ -27,7 +33,8 @@ describe("Atonacht app: pins, templates, weekly review", () => {
     // pin a note from the editor
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
     fireEvent.click(await screen.findByText("Tide roguelike", { selector: ".nt" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Pin note" }));
+    openNoteMenu();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Pin note" }));
     await waitFor(() => expect(files()["Game ideas/Tide roguelike.md"].content.startsWith("---\npinned: true\n---\n")).toBe(true));
 
     // Library shows it, and starter templates can be added

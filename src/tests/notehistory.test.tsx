@@ -4,6 +4,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { IDBFactory } from "fake-indexeddb";
 import { MAX_VERSION_BYTES, createIdbHistory } from "../lib/noteHistory";
 
+/** A note's history, rename, pin and trash all live behind one button in its bar. */
+async function openNoteMenu() {
+  fireEvent.click(await screen.findByRole("button", { name: "Note options" }));
+}
+
+
 afterEach(cleanup);
 
 describe("the version history on this device", () => {
@@ -85,7 +91,8 @@ describe("a save keeps the text it replaced", () => {
     // History is reachable without GitHub, and lists the text the save replaced
     const todaySection = screen.getByText("Today’s note").closest("section") as HTMLElement;
     fireEvent.click(within(todaySection).getByRole("button", { name: "Open note" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Note history" }));
+    openNoteMenu();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Note history" }));
     await screen.findByText("On this device");
     const row = (await screen.findByText(/bytes$/)).closest("button") as HTMLElement;
     fireEvent.click(row);

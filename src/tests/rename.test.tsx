@@ -2,6 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
+/** A note's history, rename, pin and trash all live behind one button in its bar. */
+async function openNoteMenu() {
+  fireEvent.click(await screen.findByRole("button", { name: "Note options" }));
+}
+
+
 const files = () => JSON.parse(localStorage.getItem("atonacht.demo")!).files as Record<string, { content: string }>;
 const side = () => within(document.querySelector(".side") as HTMLElement);
 
@@ -28,7 +34,8 @@ describe("renaming a note", () => {
 
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
     fireEvent.click(await screen.findByText("Alpha", { selector: ".nt" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Rename or move note" }));
+    openNoteMenu();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Rename or move" }));
     fireEvent.change(await screen.findByLabelText("Note name"), { target: { value: "Gamma" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -53,7 +60,8 @@ describe("renaming a note", () => {
     }, ["Personal", "Archive"]);
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);
     fireEvent.click(await screen.findByText("Alpha", { selector: ".nt" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Rename or move note" }));
+    openNoteMenu();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Rename or move" }));
     fireEvent.change(await screen.findByLabelText("Folder"), { target: { value: "Archive" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 

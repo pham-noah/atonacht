@@ -99,7 +99,7 @@ export function Home() {
             {show === "done"
               ? "Nothing finished yet today."
               : show === "open"
-                ? "Nothing left to do. Done work is under “Done”."
+                ? "Nothing left to do in today’s note. Done work is under “Done”."
                 : "Nothing planned yet. Add a task above, or open the note to write."}
           </p>
         )}

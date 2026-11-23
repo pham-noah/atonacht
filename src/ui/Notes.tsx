@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useWide } from "../useWide";
 import { today } from "../lib/dates";
 import { fillTemplate } from "../lib/templates";
-import { matchSnippet, noteTitle, snippet } from "../lib/markdown";
+import { matchSnippet, noteTitle, snippet, snippetIsQuote } from "../lib/markdown";
 import { plural } from "../lib/plural";
 import { describeQuery, noteMatches, parseQuery } from "../lib/search";
 import { useNav } from "../nav";
@@ -110,7 +110,7 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
             }}
           >
             <span className="nt">{noteTitle(p, c)}</span>
-            <span className="muted small">{hit ? <>{hit.before}<mark>{hit.hit}</mark>{hit.after}</> : snippet(c)}</span>
+            <span className={hit ? "muted small" : `muted small${snippetIsQuote(c) ? " q" : ""}`}>{hit ? <>{hit.before}<mark>{hit.hit}</mark>{hit.after}</> : snippet(c)}</span>
             <span className="meta"><span className="chip">{p.includes("/") ? p.split("/")[0] : "Notes"}</span><span className="muted small">{when(mtimes[p] ?? 0)}</span></span>
           </button>
           );

@@ -13,6 +13,7 @@ import { attachmentMarkdown, attachmentName, attachmentPath, mimeOf, photoName, 
 import { fs } from "../lib/backend";
 import { noteTitle } from "../lib/markdown";
 import { BackBar, Icon, RenameNoteDialog } from "./common";
+import { useMenu } from "./ContextMenu";
 import { LiveEditor, LiveHandle } from "./LiveEditor";
 
 const FONTS = { sans: "Inter, system-ui, sans-serif", serif: "Fraunces, Georgia, serif", mono: "ui-monospace, SFMono-Regular, Menlo, monospace" };
@@ -31,6 +32,7 @@ export function Editor({ path }: { path: string }) {
   const latest = useRef(text);
   const area = useRef<LiveHandle>(null);
   const { prefs } = usePrefs();
+  const menu = useMenu();
   latest.current = text;
 
   const flush = async () => {
@@ -175,10 +177,26 @@ export function Editor({ path }: { path: string }) {
       <BackBar
         label={text.match(/^#\s+(.+)$/m)?.[1]?.trim() || path.replace(/\.md$/, "").split("/").slice(-1)[0]}
         sub={path.split("/").slice(0, -1).join(" / ")}
+        dup={/^#\s+/m.test(text)}
         right={<>
-          <button className="ib" aria-label="Note history" onClick={() => go({ name: "history", path })}><Icon name="clock" /></button>
-          <button className="ib" aria-label="Rename or move note" onClick={() => setRenaming(true)}><Icon name="edit" /></button>
-          <button className="ib" aria-label={isPinned(text) ? "Unpin note" : "Pin note"} aria-pressed={isPinned(text)} onClick={() => change(setPinned(text, !isPinned(text)))}><Icon name="pin" /></button>
+          <button
+            className="ib"
+            aria-label="Note options"
+            aria-haspopup="menu"
+            onClick={(e) => {
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              menu.open({
+                x: Math.max(8, r.right - 232),
+                y: r.bottom + 6,
+                items: [
+                  { label: "Note history", run: () => go({ name: "history", path }) },
+                  { label: "Rename or move", run: () => setRenaming(true) },
+                  { label: isPinned(text) ? "Unpin note" : "Pin note", run: () => change(setPinned(text, !isPinned(text))) },
+                  { label: "Move to trash", danger: true, sep: true, run: () => { if (confirm("Move this note to the trash?")) remove(path).then(back); } },
+                ],
+              });
+            }}
+          ><span aria-hidden="true" style={{ letterSpacing: 1 }}>•••</span></button>
           <button
             className={`pill mode${mode === "edit" ? "" : " on"}`}
             aria-label={mode === "edit" ? "Preview" : "Edit"}
@@ -229,16 +247,16 @@ export function Editor({ path }: { path: string }) {
           )}
         </div>
       )}
-      <div className="toolbar" role="toolbar" aria-label="Formatting">
-        <button onClick={() => area.current?.wrap("**", "**")} aria-label="Bold"><b>B</b></button>
-        <button onClick={() => area.current?.lineStart("- [ ] ")} aria-label="Checkbox"><Icon name="tasks" size={18} /></button>
-        <button onClick={() => area.current?.wrap(` @due(${addDays(today(), 1)})`)} aria-label="Due tomorrow"><Icon name="calendar" size={18} /></button>
-        <button onClick={() => area.current?.wrap("#")} aria-label="Tag">#</button>
-        <button onClick={() => area.current?.wrap("[[", "]]")} aria-label="Link note"><Icon name="link" size={18} /></button>
-        <button onClick={() => filePick.current?.click()} aria-label="Attach a picture">📎</button>
-        <span className="sep" />
-        <button className="danger" onClick={() => { if (confirm("Move this note to the trash?")) remove(path).then(back); }} aria-label="Delete note"><Icon name="x" size={18} /></button>
-      </div>
+      {mode === "edit" && (
+        <div className="toolbar" role="toolbar" aria-label="Formatting">
+          <button onClick={() => area.current?.wrap("**", "**")} aria-label="Bold"><b>B</b></button>
+          <button onClick={() => area.current?.lineStart("- [ ] ")} aria-label="Checkbox"><Icon name="tasks" size={18} /></button>
+          <button onClick={() => area.current?.wrap(` @due(${addDays(today(), 1)})`)} aria-label="Due tomorrow"><Icon name="calendar" size={18} /></button>
+          <button onClick={() => area.current?.wrap("#")} aria-label="Tag">#</button>
+          <button onClick={() => area.current?.wrap("[[", "]]")} aria-label="Link note"><Icon name="link" size={18} /></button>
+          <button onClick={() => filePick.current?.click()} aria-label="Attach a picture">📎</button>
+        </div>
+      )}
       <Links path={path} notes={notes} onOpen={(to) => flush().then(() => go({ name: "editor", path: to }))} />
       {renaming && <RenameNoteDialog path={path} onClose={() => setRenaming(false)} onDone={(to) => flush().then(() => replace({ name: "editor", path: to }))} />}
       <div className={`muted small status${state === "saved" ? " saved" : ""}`}>{state === "saved" ? "Saved" : state === "saving" ? "Saving…" : "Could not save. Retrying on next edit."}</div>

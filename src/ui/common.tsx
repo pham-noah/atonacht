@@ -120,14 +120,14 @@ export const PageHead = ({ sub, title, right }: { sub?: string; title: string; r
   </div>
 );
 
-export const BackBar = ({ label, sub, right, onBack }: { label?: string; sub?: string; right?: ReactNode; onBack?: () => void }) => {
+export const BackBar = ({ label, sub, right, onBack, dup }: { label?: string; sub?: string; right?: ReactNode; onBack?: () => void; dup?: boolean }) => {
   const nav = useNav();
   const back = onBack ?? nav.back;
   return (
     <div className="bar">
       <button className="ib" onClick={back} aria-label="Back"><Icon name="back" /></button>
       <span className="barlabel grow">
-        <span className="bartitle">{label}</span>
+        <span className={`bartitle${dup ? " dup" : ""}`}>{label}</span>
         {sub && <span className="barsub">{sub}</span>}
       </span>
       {right}

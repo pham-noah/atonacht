@@ -275,7 +275,7 @@ function Shell() {
       </main>
       {!wide && !full && (
         <>
-          {["tasks", "notes"].includes(route.name) && (
+          {route.name === "tasks" && (
             <button className="fab" aria-label="Quick capture" onClick={() => setCapture("")}><Icon name="plus" size={26} /></button>
           )}
           <nav className="tabs" aria-label="Main">
