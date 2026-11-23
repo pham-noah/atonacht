@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, today } from "../lib/dates";
+import { describeWhen, parseWhen } from "../lib/natural";
 import { usePrefs } from "../prefs";
 import { groupTasks } from "../lib/tasks";
 import { describeQuery, parseQuery, taskMatches } from "../lib/search";
@@ -57,6 +58,10 @@ export function Tasks() {
         <input className="in" placeholder="Add a task to today’s note" value={text} onChange={(e) => setText(e.target.value)} />
         <button className="btn" type="submit">Add</button>
       </form>
+      {(() => {
+        const said = parseWhen(text);
+        return said.day || said.at ? <p className="muted small addhint">{describeWhen(said)}</p> : null;
+      })()}
       <section className="card">
         {status === "open" ? (
           sections.map(([title, list]) => list.length > 0 && (

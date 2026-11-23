@@ -7,6 +7,7 @@ import { planTrashCleanup, stampPath, unstampPath } from "./lib/trash";
 import type { Entry } from "./lib/fs";
 import { addDays, fmt, today } from "./lib/dates";
 import { dailyContent, dailyPath, setDailyDir } from "./lib/daily";
+import { parseWhen } from "./lib/natural";
 import { isPinned, setPinned } from "./lib/frontmatter";
 import { DAILY_TEMPLATE, STARTERS, isTemplatePath } from "./lib/templates";
 import { ConflictSource, freeCopyPath, parseConflict } from "./lib/conflicts";
@@ -330,8 +331,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     addTaskToToday: async (text, due) => {
       const p = await openDaily();
-      const d = due === undefined ? (prefs.defaultDue === "today" ? today() : prefs.defaultDue === "tomorrow" ? addDays(today(), 1) : undefined) : due ?? undefined;
-      await save(p, addTask(ref.current[p].content, d ? `${text} @due(${d})` : text));
+      // What someone types is read the way they say it: "buy milk tomorrow 5pm" gets the day and the time out of the
+      // words, and anything the words do not date falls back to the "default due date" setting (today unless changed).
+      const said = parseWhen(text, today());
+      const d = due === null ? null : due ?? said.due ?? (prefs.defaultDue === "today" ? today() : prefs.defaultDue === "tomorrow" ? addDays(today(), 1) : null);
+      const at = said.at ? ` @at(${said.at})` : "";
+      const title = said.title || text.trim(); // someone typing only "tomorrow" still gets a task
+      await save(p, addTask(ref.current[p].content, d ? `${title} @due(${d})${at}` : `${title}${at}`));
     },
     loadTrash: () => fs.listTrash(root),
     restore: async (tp) => {

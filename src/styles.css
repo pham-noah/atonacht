@@ -49,6 +49,8 @@ h1,h2{margin:0}
 .addrow .in:focus,.addrow .in:focus-visible{outline:none} /* the caret is the focus signal here */
 .addrow .in{background:transparent;border:0;flex:1;min-width:0;padding:8px 0;height:auto}
 .addrow .btn{height:40px;padding:0 18px;border-radius:999px}
+/* what the words in the box were understood as: "tomorrow at 5:00 pm" */
+.addhint{margin:6px 0 0 16px;color:var(--acc)}
 .link{background:none;border:0;text-align:left;padding:0;color:var(--txt)}.link.done{text-decoration:line-through;color:var(--muted)}
 input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;border-radius:7px;border:1.5px solid var(--line);background:var(--fld);display:inline-grid;place-items:center;cursor:pointer;transition:background .16s ease,border-color .16s ease,transform .12s ease}
 input[type=checkbox]:hover{border-color:var(--acc)}

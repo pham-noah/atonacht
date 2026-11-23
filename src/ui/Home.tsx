@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { longDate, today } from "../lib/dates";
+import { describeWhen, parseWhen } from "../lib/natural";
 import { applyCarryOver, dailyPath, findCarryOver } from "../lib/daily";
 import { noteTitle, snippet } from "../lib/markdown";
 import { plural } from "../lib/plural";
@@ -107,6 +108,10 @@ export function Home() {
           <input className="in" placeholder="Add a task to today" value={text} onChange={(e) => setText(e.target.value)} />
           <button className="btn" type="submit">Add</button>
         </form>
+        {(() => {
+          const said = parseWhen(text);
+          return said.day || said.at ? <p className="muted small addhint">{describeWhen(said)}</p> : null;
+        })()}
         {addErr && <p className="errtext" role="alert">{addErr}</p>}
         {notes[p] && snippet(notes[p], 140) && <p className="muted small">{snippet(notes[p], 140)}</p>}
       </section>

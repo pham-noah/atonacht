@@ -128,7 +128,7 @@ export function TasksPanel() {
   return (
     <>
       <Group>
-        <Choice label="Default due date for new tasks" value={prefs.defaultDue} onChange={(v) => setPrefs({ defaultDue: v })} options={[["none", "None"], ["today", "Today"], ["tomorrow", "Tomorrow"]]} />
+        <Choice label="Default due date for new tasks" value={prefs.defaultDue} onChange={(v) => setPrefs({ defaultDue: v })} options={[["today", "Today"], ["tomorrow", "Tomorrow"], ["none", "No date"]]} />
         <Choice label="Unfinished tasks from yesterday" value={prefs.carryOver} onChange={(v) => setPrefs({ carryOver: v })} options={[["ask", "Ask me"], ["auto", "Carry over"], ["off", "Leave"]]} />
         <Choice label="Show completed tasks for" value={prefs.doneDays} onChange={(v) => setPrefs({ doneDays: v })} options={[[7, "7 days"], [30, "30 days"], [0, "Always"]]} />
       </Group>

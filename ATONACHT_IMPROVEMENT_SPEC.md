@@ -80,6 +80,38 @@ rename already rewrites `[[links]]` in every other note, aliases and `#headings`
 Gate on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **258/258 passing** (45 files), `npm run build`
 clean. Evidence: `docs/improvement-evidence/sixth-pass/`.
 
+## 0d. Status — seventh pass (2026-11-23): tasks read the way you'd say them
+
+The two things the fifth pass listed as gaps are now features rather than gaps.
+
+**Words are a date.** Every box that adds a task — Home's quick add, Tasks' quick add, and the capture dialog —
+reads the day and the time out of what was typed and takes them out of the title:
+
+| Typed | Becomes |
+|---|---|
+| `Buy milk tomorrow 5pm` | Buy milk · **24 Nov, 5:00 pm** |
+| `Call the bank` | Call the bank · **today** (the default) |
+| `gym fri` / `next friday` / `monday` (typed on a Monday) | the next one, never the one gone by |
+| `pay rent on 31 dec`, `renew 5/12`, `ship 2026-12-31` | that day; a day already past this year means next year |
+| `water plants in 3 days`, `in 2 weeks`, `next week`, `day after tomorrow` | the arithmetic |
+| `standup 9:30`, `call 5pm`, `lunch 12pm`, `call 5 o'clock`, `breakfast noon` | the time; **a time with no day means today** |
+| `buy 2 apples`, `read chapter 1`, `open 24/7` | left exactly as typed — no day is guessed |
+| `pay rent @due(2026-12-31) tomorrow` | the hand-typed tag wins; nothing is rewritten |
+
+A hint under the box says what was understood (`tomorrow at 5:00 pm`) before it is added, and the task chip
+carries the time (`24 Nov, 5:00 pm`). Both are one function, `parseWhen` in `src/lib/natural.ts`, with the
+reading in words handled by `describeWhen`/`atLabel` — so the box and the chip can never disagree.
+
+**No date means today.** Tasks with nothing in their words are due today: the default in Settings changed from
+*No date* to *Today* (and the options now read Today / Tomorrow / No date). A stored default is migrated once
+(`prefs.version`), except for anyone who had deliberately chosen *Tomorrow*; a deliberate *No date* stays *No
+date* after the migration. `@repeat(monthly)` from the end of the month also keeps to the end of the month —
+that was bug 11 in §0c, and it now shares the same date path.
+
+Gate on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **270/270 passing** (47 files, `natural.test.ts`
+covering 20 readings and `naturaladd.test.tsx` covering the boxes and the migration), `npm run build` clean.
+Evidence: `docs/improvement-evidence/seventh-pass/`.
+
 ### Item 1 — links (done)
 
 - `renderMarkdown("see [Google](https://google.com)")` → one `a.ext` with `href`/`data-href` and

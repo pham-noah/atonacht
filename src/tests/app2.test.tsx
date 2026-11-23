@@ -21,7 +21,8 @@ describe("Atonacht app: pins, templates, weekly review", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Add" })[0]);
     const box = await screen.findByLabelText("Complete: Write tests");
     fireEvent.click(box);
-    await waitFor(() => expect(Object.values(files()).some((f) => /- \[x\] Write tests @done\(\d{4}-\d{2}-\d{2}\)/.test(f.content))).toBe(true));
+    // a task with no date in its words is for today, and checking it off stamps @done
+    await waitFor(() => expect(Object.values(files()).some((f) => /- \[x\] Write tests @due\(\d{4}-\d{2}-\d{2}\) @done\(\d{4}-\d{2}-\d{2}\)/.test(f.content))).toBe(true));
 
     // pin a note from the editor
     fireEvent.click(side().getAllByRole("button", { name: /^Notes$/ })[0]);

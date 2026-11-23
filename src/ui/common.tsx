@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { pushBack } from "../lib/back";
 import { hasPointer, useMenu } from "./ContextMenu";
 import { addDays, shortDate, today } from "../lib/dates";
+import { describeWhen, parseWhen, atLabel } from "../lib/natural";
 import { Priority, Task } from "../lib/tasks";
 import { dateOfDaily, isDailyPath } from "../lib/daily";
 import { columnsFor } from "../lib/kanban";
@@ -263,7 +264,7 @@ export const TaskRow = memo(function TaskRow({ task, source = true }: { task: Ta
       )}
       <span className="taskmeta">
         {task.priority === "high" && <span className="chip hi">high</span>}
-        {task.due && <span className={`chip${overdue ? " warn" : ""}`}>{shortDate(task.due)}</span>}
+        {task.due && <span className={`chip${overdue ? " warn" : ""}`}>{shortDate(task.due)}{task.at ? `, ${atLabel(task.at)}` : ""}</span>}
         {task.repeat && <span className="chip">↻ {task.repeat}</span>}
         {source && (
           <button className="chip chipbtn" onClick={() => go({ name: "editor", path: task.path })}>
@@ -372,11 +373,13 @@ export function CaptureDialog({ onClose, initial = "" }: { onClose: () => void; 
   const [text, setText] = useState(initial);
   const [err, setErr] = useState("");
   const [due, setDue] = useState<"" | "today" | "tomorrow">(prefs.defaultDue === "none" ? "" : prefs.defaultDue);
+  // The words win over the default, the pills win over the default, and "No date" means no date.
+  const said = parseWhen(text);
+  const resolved = said.due ?? (due === "today" ? today() : due === "tomorrow" ? addDays(today(), 1) : null);
   const submit = async () => {
     if (!text.trim()) return;
-    const d = due === "today" ? today() : due === "tomorrow" ? addDays(today(), 1) : null;
     try {
-      await addTaskToToday(text.trim(), d);
+      await addTaskToToday(text.trim(), resolved);
       onClose();
     } catch (e) {
       setErr(`Could not save the task: ${e instanceof Error ? e.message : String(e)}`);
@@ -387,11 +390,13 @@ export function CaptureDialog({ onClose, initial = "" }: { onClose: () => void; 
       <input className="in" autoFocus placeholder="What needs doing?" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
       <div className="btnrow start">
         {(["", "today", "tomorrow"] as const).map((d) => (
-          <button key={d} className={`pill${due === d ? " on" : ""}`} onClick={() => setDue(d)}>{d || "No date"}</button>
+          <button key={d} className={`pill${due === d && !said.due ? " on" : ""}`} onClick={() => setDue(d)}>{d || "No date"}</button>
         ))}
       </div>
+      <p className="muted small">
+        {resolved ? <>Goes in under <strong>{describeWhen({ ...said, due: resolved })}</strong>.</> : "Goes in with no date."} Added to today’s note under Plan.
+      </p>
       {err && <p className="errtext" role="alert">{err}</p>}
-      <p className="muted small">Added to today’s note under Plan.</p>
       <div className="btnrow"><button className="pill" onClick={onClose}>Cancel</button><button className="btn" onClick={submit}>Add</button></div>
     </Modal>
   );

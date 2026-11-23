@@ -23,6 +23,23 @@ picture is the app running, not a mock. Screenshots are full-viewport.
 | `attachment-written-line.png` | The line the attach wrote into the note: `![big.jpg](Attachments/2026-11-14-222112-big.jpg)` — the picture is a file in `Attachments/`, not inline data. |
 | `search-hit-line.png` | Searching `rent` in a 41-line note shows `- [ ] Pay rent by Friday` with **rent** marked, not the note's opening line. |
 
+## Seventh pass (2026-11-23) — words for dates, and today by default
+
+Desktop 1280×800 and phone 390×844, demo file layer. See §0d of the spec.
+
+| File | What it proves |
+|------|----------------|
+| `seventh-pass/01-words-become-a-date.png` | Typing `Buy milk tomorrow 5pm` in Home's quick add puts `tomorrow at 5:00 pm` under the box before anything is added. |
+| `seventh-pass/02-tasks-dated-from-words.png` | The rows afterwards: `Buy milk` with `24 Nov, 5:00 pm`, `Call the bank` with `23 Nov` — the second was typed with no date at all. |
+| `seventh-pass/03-capture-says-where-it-goes.png` | Phone capture dialog: `Draft the letter tomorrow 9am` → “Goes in under tomorrow at 9:00 am.” |
+| `seventh-pass/04-words-in-the-tasks-box.png` | Tasks page: `Renew the passport on 3 jan` reads as `Sun 3 Jan` while typing, and the list below shows the dated rows. |
+
+What the files themselves got, read back from the demo layer:
+
+- `Buy milk tomorrow 5pm` → `- [ ] Buy milk @due(2026-11-24) @at(17:00)`
+- `Call the bank` → `- [ ] Call the bank @due(2026-11-23)` (today)
+- `Draft the letter tomorrow 9am` (capture dialog) → `- [ ] Draft the letter @due(2026-11-24) @at(09:00)`
+
 ## Sixth pass (2026-11-23) — dates and conflicts, read closely
 
 Phone-width run (390×844, demo file layer) for the layout and accessibility audit, desktop for the task itself.

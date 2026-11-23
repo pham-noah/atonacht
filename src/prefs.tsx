@@ -21,6 +21,7 @@ export interface Prefs {
   density: "comfortable" | "compact";
   openTodayOnLaunch: boolean;
   defaultDue: "none" | "today" | "tomorrow";
+  version?: number;
   carryOver: "ask" | "auto" | "off";
   doneDays: number; // 0 = show all
   repeatFrom: "due" | "completion";
@@ -58,12 +59,21 @@ export const ACCENTS: Record<string, [string, string]> = {
 };
 
 const KEY = "atonacht.prefs";
-const DEFAULTS: Prefs = { theme: "glass", accent: "blue", root: "", onboarded: false, carryDismissed: "", reduceTransparency: false, textSize: 15, editorFont: "sans", editorSize: 16, lineHeight: 1.7, livePreview: true, spellcheck: true, startScreen: "home", weekStart: "mon", density: "comfortable", openTodayOnLaunch: false, defaultDue: "none", carryOver: "ask", doneDays: 7, repeatFrom: "due", dailyDir: "Daily notes", autoCreateDaily: true, remind: DEFAULT_REMIND, tabs: ["home", "tasks", "board", "notes", "calendar"], swipeRight: "complete", swipeLeft: "tomorrow", appLock: false, lockAfter: 60_000, syncthingUrl: "http://127.0.0.1:8384", syncthingKey: "", githubRepo: "", githubBranch: "main", githubToken: "", syncMethod: "syncthing", trashDays: 30, hideInRecents: false, blockScreenshots: false, startupCache: true, kanbanColumns: ["Doing"], boardSort: "urgency" };
+const DEFAULTS: Prefs = { theme: "glass", accent: "blue", root: "", onboarded: false, carryDismissed: "", reduceTransparency: false, textSize: 15, editorFont: "sans", editorSize: 16, lineHeight: 1.7, livePreview: true, spellcheck: true, startScreen: "home", weekStart: "mon", density: "comfortable", openTodayOnLaunch: false, defaultDue: "today", carryOver: "ask", doneDays: 7, repeatFrom: "due", dailyDir: "Daily notes", autoCreateDaily: true, remind: DEFAULT_REMIND, tabs: ["home", "tasks", "board", "notes", "calendar"], swipeRight: "complete", swipeLeft: "tomorrow", appLock: false, lockAfter: 60_000, syncthingUrl: "http://127.0.0.1:8384", syncthingKey: "", githubRepo: "", githubBranch: "main", githubToken: "", syncMethod: "syncthing", trashDays: 30, hideInRecents: false, blockScreenshots: false, startupCache: true, kanbanColumns: ["Doing"], boardSort: "urgency" };
+
+// Bumped when a stored default has to change for everyone. 2: tasks with no date in their words are for today.
+const PREFS_VERSION = 2;
 
 function load(): Prefs {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? "{}");
-    return { ...DEFAULTS, ...saved, remind: { ...DEFAULT_REMIND, ...saved.remind } };
+    const merged: Prefs = { ...DEFAULTS, ...saved, remind: { ...DEFAULT_REMIND, ...saved.remind } };
+    // Someone who has never dated a task by default now gets today, the way they would mean it; anyone who chose a
+    // default of their own keeps it.
+    if (!saved.version) {
+      merged.defaultDue = saved.defaultDue === "tomorrow" ? "tomorrow" : "today";
+    }
+    return { ...merged, version: PREFS_VERSION };
   } catch {
     return DEFAULTS;
   }
