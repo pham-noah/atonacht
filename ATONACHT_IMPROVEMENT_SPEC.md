@@ -454,3 +454,21 @@ Tests: `src/tests/update.test.tsx` (ABI choice, the first-APK regression, the wh
 simulated Pixel, and a truncated download that offers "Try again" rather than the installer) and two Rust tests in
 `updater.rs` (an asset name cannot choose a path; a short download is thrown away).
 
+
+## 9. The phone pass, after 0.3.1
+
+Driven at 390×844 against a seeded five-note vault, then fixed on `main`:
+
+| # | What was wrong | Cause | Fix |
+|---|---|---|---|
+| 1 | A note you were only reading ended in a formatting toolbar, Delete last | `.toolbar` rendered outside the `mode === "edit"` branch; its buttons drive a textarea that is not mounted | toolbar is edit-only; Delete moved into a note menu behind `•••` |
+| 2 | The bar repeated the note's H1, and the mode pill was a bare eye | `BackBar` always printed the title; `.modelabel` was hidden on phones | `dup` hides the bar title when the body opens with a heading, which frees the pill to say "Edit"/"Preview" |
+| 3 | Two create actions on Notes | `"New note"` in the head and a Quick-capture FAB over the last row | the FAB belongs to Tasks, where capture is the only way to add anything |
+| 4 | Page head took 58% of the viewport before the first row | 36px serif title, subtitle, search, chips, all stacked | on a phone the title sits in bar height with its count beside it; desktop unchanged |
+| 5 | Snippets printed markdown at the reader (`> …`, `- Milk - Bread`, `|---|`) | `snippet()` dropped only headings and task lines | strips quote/bullet/number/rule/table markers and `!high`; a quote keeps a drawn accent bar (`snippetIsQuote`) |
+| 6 | Rows ghosted through and below the tab bar | `.tabs` was 86% `--float`, and the fade under it started at the same alpha | themes gain `--barfill` for the bar and its fade |
+| 7 | "Nothing left to do" on a card that only covers today's note | wording | "Nothing left to do in today's note. Done work is under “Done”." |
+
+Tests: `src/tests/lib.test.ts` (the line a row shows: markers, priority, quote detection) and `previewtick.test.tsx`
+(no toolbar in reading mode, toolbar while editing, Delete absent from it and present in the note menu).
+`src/tests/rename.test.tsx`, `files.test.tsx`, `notehistory.test.tsx`, `app2.test.tsx` now open the menu first.
