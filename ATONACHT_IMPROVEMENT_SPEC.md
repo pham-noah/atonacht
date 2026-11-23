@@ -271,7 +271,7 @@ Calendar, Notes/Library/Tags, weekly review, reminders, conflicts, trash, ZIP ba
   focus restore; every file layer (desktop / SAF / in-memory demo) behind one `NotesFs` interface; atomic
   saves on desktop; incremental `TaskIndex`; note cache in IndexedDB; conflict diff/resolve; the README is
   honest about what is *not* verified.
-- **Known gaps it already admits** (README → "Known gaps"): Android cannot swap a file into place, so a save
+- **Known limits it already admits** (README → "Known limits"): Android cannot swap a file into place, so a save
   briefly empties the note; Android polls every 8 s; no iOS.
 
 ## 2. What works, what is thin
@@ -377,7 +377,8 @@ is closed, reopen, restore the previous version from History.
 **Problem.** Measured now vs. what the README says: **209** JS tests (README: 148, twice), **86.7 kB** gzip in
 the initial `index` chunk (README: 72 KB), and the "Known gaps" list will be out of date once items 1-4 land.
 **Change.** Update the three numbers, add the new History/version behaviour, and move any fixed gap out of
-"Known gaps" into "What is verified" with the test that proves it.
+"Known gaps" into "What is verified" with the test that proves it. — Since done twice more (§0b–§0e); the counts
+live next to `npm test` and `cargo test` in "Build and run" now, and the section is "Known limits".
 **Files.** `README.md`, `RELEASING.md` if the version step changed.
 **Success.** Every number in the README can be reproduced by the command next to it
 (`npx vitest run | tail -3`, `npm run build` gzip column); no claim in the README is contradicted by the code.
