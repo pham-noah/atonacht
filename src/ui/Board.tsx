@@ -10,6 +10,7 @@ import { usePrefs } from "../prefs";
 import { useActions, useStore } from "../store";
 import { Modal, PageHead, TaskDialog } from "./common";
 import { Source, useBoardDnd } from "./useBoardDnd";
+import { useWide } from "../useWide";
 
 const PAGE = 60; // cards drawn per column before "Show more"
 
@@ -62,11 +63,16 @@ function GlobalBoard() {
   const { prefs, setPrefs } = usePrefs();
   const [tag, setTag] = useState<string | null>(null);
   const [more, setMore] = useState<Record<string, number>>({});
+  const wide = useWide();
+  // On a phone the columns are stacked, so this says which one you are reading; drag between columns is
+  // impossible once only one is on screen, but the card dialog's "Board column" does the same job without a gesture.
+  const [only, setOnly] = useState<string | null>(null);
   const [newColOpen, setNewColOpen] = useState(false);
   const [colName, setColName] = useState("");
   const columns = useMemo(() => columnsFor(prefs.kanbanColumns), [prefs.kanbanColumns]);
   const doneSince = prefs.doneDays > 0 ? addDays(today(), -prefs.doneDays) : undefined;
   const board = useMemo(() => buildBoard(tasks, columns, { tag, doneSince, sort: prefs.boardSort }), [tasks, columns, tag, doneSince, prefs.boardSort]);
+  const shownCol = only ?? board[0]?.column.id ?? null;
   const tags = useMemo(() => [...new Set(tasks.flatMap((t) => t.tags))].sort(), [tasks]);
 
   const dnd = useBoardDnd({
@@ -98,11 +104,23 @@ function GlobalBoard() {
         </label>
       </div>
       <Hint />
+      {!wide && board.length > 1 && (
+        <div className="colseg" role="tablist" aria-label="Columns">
+          {board.map(({ column, tasks: list }) => {
+            const on = shownCol === column.id;
+            return (
+              <button key={column.id} role="tab" aria-selected={on} className={on ? "on" : ""} onClick={() => setOnly(column.id)}>
+                {column.title} <span className="n">{list.length}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div className="board" role="list">
         {board.map(({ column, tasks: list }, ci) => {
           const shown = list.slice(0, PAGE + (more[column.id] ?? 0));
           return (
-            <section key={column.id} role="listitem" aria-label={column.title} data-col-drop={ci} className={`kcol${dnd.over?.col === ci && dnd.drag ? " over" : ""}`}>
+            <section key={column.id} role="listitem" aria-label={column.title} data-col-drop={ci} className={`kcol${!wide && shownCol !== column.id ? " hidden" : ""}${dnd.over?.col === ci && dnd.drag ? " over" : ""}`}>
               <header className="khead"><h2 className="h2 grow">{column.title}</h2><span className="chip">{list.length}</span></header>
               <div className="kbody">
                 {shown.map((t, i) => (

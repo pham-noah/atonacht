@@ -182,10 +182,12 @@ export function atLabel(at: string): string {
   return `${h % 12 === 0 ? 12 : h % 12}:${pad2(String(m || 0))} ${h < 12 ? "am" : "pm"}`;
 }
 
-export const describeWhen = (p: Parsed): string => {
+export const describeWhen = (p: Parsed, now: Date = new Date()): string => {
   if (!p.due) return "";
   const d = parseDate(p.due);
-  const same = (x: Date) => x.toDateString() === new Date().toDateString();
+  // `now` is injectable so a test can say what "today" means; a fixed date in a test used to flip from
+  // "tomorrow" to "today" at midnight, which is when this broke.
+  const same = (x: Date) => x.toDateString() === now.toDateString();
   const day = same(d) ? "today"
     : same(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1)) ? "tomorrow"
     : `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].replace(/^./, (c) => c.toUpperCase())}`;

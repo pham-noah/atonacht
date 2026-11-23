@@ -26,7 +26,7 @@ export function Library() {
 
   return (
     <>
-      <BackBar label="Sidebar" />
+      <BackBar label="Back" />
       <PageHead title="Library" />
       <div className="cap">Pinned</div>
       <section className="card list">

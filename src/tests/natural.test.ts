@@ -62,9 +62,11 @@ describe("reading the day out of what someone typed", () => {
   });
 
   it("says, in words, what it understood", () => {
-    expect(describeWhen(parseWhen("pay rent tomorrow 5pm", MON))).toBe("tomorrow at 5:00 pm");
-    expect(describeWhen(parseWhen("call 9am", MON))).toBe("today at 9:00 am");
-    expect(describeWhen(parseWhen("renew dec 31", MON))).toBe("Thu 31 Dec");
-    expect(describeWhen(parseWhen("nothing here", MON))).toBe("");
+    // "today" is the day the words were typed, so the test says which day that is
+    const mon = new Date(2026, 10, 23);
+    expect(describeWhen(parseWhen("pay rent tomorrow 5pm", MON), mon)).toBe("tomorrow at 5:00 pm");
+    expect(describeWhen(parseWhen("call 9am", MON), mon)).toBe("today at 9:00 am");
+    expect(describeWhen(parseWhen("renew dec 31", MON), mon)).toBe("Thu 31 Dec");
+    expect(describeWhen(parseWhen("nothing here", MON), mon)).toBe("");
   });
 });

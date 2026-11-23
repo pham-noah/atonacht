@@ -32,6 +32,7 @@ const PATHS: Record<string, string> = {
   trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
   link: "M9 15l6-6M10.5 6.5l1.8-1.8a4 4 0 0 1 5.6 5.6l-1.8 1.8M13.5 17.5l-1.8 1.8a4 4 0 0 1-5.6-5.6l1.8-1.8",
   clock: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2",
+  menu: "M4 7h16M4 12h16M4 17h16",
 };
 export const Icon = ({ name, size = 22 }: { name: string; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

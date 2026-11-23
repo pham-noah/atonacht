@@ -39,7 +39,7 @@ export function Weekly() {
 
   return (
     <>
-      <BackBar label="Sidebar" right={<span className="chip">{weekLabel(t, mf)}</span>} />
+      <BackBar label="Back" right={<span className="chip">{weekLabel(t, mf)}</span>} />
       <PageHead sub={`Step ${step + 1} of 3`} title={["What got done", "What’s still open?", "Plan next week"][step]} />
       <div className="steps">{STEPS.map((s, i) => <span key={s} className={i <= step ? "on" : ""} />)}</div>
       <section className="card stack">

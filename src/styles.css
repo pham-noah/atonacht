@@ -110,8 +110,10 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .content{display:flex;flex-direction:column;gap:14px;width:100%;max-width:880px}
 .wide .main{padding:36px 40px;align-items:center}
 .wide .tabs,.wide .fab,.wide .brandbtn,.wide .drawerscrim{display:none}
-.brandbtn{display:flex;align-items:center;gap:10px;background:none;border:0;min-height:44px;color:var(--txt);padding:0;align-self:flex-start}
+.brandbtn{display:flex;align-items:center;gap:10px;background:none;border:0;min-height:44px;color:var(--txt);padding:0;align-self:stretch;width:100%}
 .brandbtn .brandname{font-size:20px}
+/* the word is the menu, so it carries a menu icon: without one it reads as branding and nobody taps it */
+.brandmenu{margin-left:auto;display:flex;align-items:center;color:var(--muted);padding-right:2px}
 @media (max-width:899px){
   .side{position:fixed;left:0;top:0;bottom:0;margin:12px;z-index:30;width:min(310px,calc(100% - 24px));transform:translateX(-120%);transition:transform .22s ease}
   .side.open{transform:none}.solid .side{margin:0;width:min(310px,100%);height:100%}
@@ -255,6 +257,8 @@ input[type=radio]:checked{border-color:var(--acc);box-shadow:inset 0 0 0 4px var
 .dl.same{color:var(--muted)}.dl.add{background:var(--hiB)}.dl.del{background:color-mix(in srgb,var(--warn) 22%,transparent)}
 .firstrun{margin:auto;width:min(420px,100%);padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
 .firstrun .brandname{font-size:44px;line-height:1}.tag{font:italic 20px Fraunces,Georgia,serif;color:var(--muted)}
+/* a tag row says where it lives, under the chip */
+.tagnotes{display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lead{max-width:300px;line-height:1.6;margin:6px 0}.field.wide{width:100%;text-align:left}
 @media (prefers-reduced-transparency:reduce){.glass{--blur:none;--card:rgba(30,34,64,.96);--side:rgba(22,26,52,.98)}}
 
@@ -540,16 +544,26 @@ body:has(.kghost){cursor:grabbing}
 /* While a card is carried the board must scroll freely; mandatory snapping would pull it back every frame. */
 .app:has(.kghost) .board{scroll-snap-type:none}
 
-/* phone board, after the base rules so it actually wins: columns stack, their cards scroll sideways */
+/* which column the phone's board is showing — one tap, not four swipes. Base rule first: the media block below
+   turns it on, and a later `display:none` would win the cascade even inside the query. */
+.colseg{display:none;gap:2px;padding:3px;margin:0 0 10px;border:1px solid var(--line);border-radius:999px;background:var(--fld)}
+.colseg button{flex:1 1 0;min-width:0;min-height:34px;padding:0 8px;border:0;border-radius:999px;background:none;color:var(--muted);font:inherit;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.colseg button.on{background:var(--acc);color:#04122B;font-weight:600}
+.colseg button .n{opacity:.7;font-weight:400}
+
+/* phone board, after the base rules so it actually wins: columns stack and so do their cards. Sideways cards
+   inside a stacked column were a scroller inside a scroller — six tasks meant four swipes and a chopped edge. */
 @media (max-width:899px){
   .kdhint{display:none}
-  /* To do / Doing / Done stack down the page; each column's cards scroll sideways, so you read one column at a time */
+  /* To do / Doing / Done stack down the page; the pill row above picks which one you are looking at, so the
+     column head would only repeat it */
   .board{flex-direction:column;gap:14px;overflow:visible}
   .kcol{flex:0 0 auto;width:100%}
-  .kbody{flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:10px;padding:2px 0 10px;scroll-snap-type:x mandatory;mask-image:linear-gradient(90deg,#000 92%,transparent)}
-  .kcol>.pill{align-self:flex-start;margin-top:2px}
-  .kbody>.kcardwrap{flex:0 0 78%;scroll-snap-align:start}
-  .kbody>.kcardwrap .kcard{height:100%}
+  .kcol.hidden{display:none}
+  .kcol>.khead{display:none}
+  .kbody{flex-direction:column;overflow:visible;gap:8px;padding:2px 0}
+  .kbody>.kcardwrap{flex:0 0 auto}
   .kbody .kdrop{display:none}
   .kadd{flex:0 0 auto;width:100%}
+  .colseg{display:flex}
 }

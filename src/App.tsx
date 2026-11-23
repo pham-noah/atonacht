@@ -246,7 +246,7 @@ function Shell() {
       {(wide || !full) && <Sidebar open={drawer} close={() => setDrawer(false)} />}
       <main className="main">
         {!wide && !full && (
-          <button className="brandbtn" onClick={() => setDrawer(true)} aria-label="Open sidebar"><Logo size={28} /><span className="brandname">Atonacht</span></button>
+          <button className="brandbtn" onClick={() => setDrawer(true)} aria-label="Open the menu" aria-haspopup="dialog"><Logo size={28} /><span className="brandname">Atonacht</span><span className="brandmenu"><Icon name="menu" size={20} /></span></button>
         )}
         {saveError && (
           <div className="banner warnb" role="alert">

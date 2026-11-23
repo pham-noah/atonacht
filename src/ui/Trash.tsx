@@ -22,7 +22,7 @@ export function Trash() {
 
   return (
     <>
-      <BackBar label="Sidebar" />
+      <BackBar label="Back" />
       <PageHead sub="Deleted notes are kept here until you delete them for good" title="Trash" right={items && items.length > 0 ? <button className="pill" onClick={async () => { if (confirm(`Delete ${items.length} notes for good?`)) { await emptyTrash(); await load(); } }}>Empty trash</button> : undefined} />
       {msg && <p className="muted">{msg}</p>}
       <section className="card list">
