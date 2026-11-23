@@ -472,3 +472,21 @@ Driven at 390×844 against a seeded five-note vault, then fixed on `main`:
 Tests: `src/tests/lib.test.ts` (the line a row shows: markers, priority, quote detection) and `previewtick.test.tsx`
 (no toolbar in reading mode, toolbar while editing, Delete absent from it and present in the note menu).
 `src/tests/rename.test.tsx`, `files.test.tsx`, `notehistory.test.tsx`, `app2.test.tsx` now open the menu first.
+
+## 10. The screens the first pass never opened
+
+Board, Tags, Library, Trash and Weekly review were not part of the phone pass. Walking them at 390×844 found
+four things, each of them the app saying something it did not mean.
+
+| What it looked like | Why | Now |
+| --- | --- | --- |
+| The board's To do column showed **one card and a chopped edge**, and you had to swipe sideways per column | `.kbody` was `flex-direction:row` with cards at `78%` width — **scrollWidth 1519 px inside 314 px**, nested in a stacked `.board` | Cards stack, and a pill row (`To do 6 · Doing 0 · Done 1`) picks the column. Moving a card still works without a drag: the card dialog has "Board column" |
+| Tags said **"1 tag across 7 notes"** on a vault where one note carried `#work` | `Tags.tsx` counted `Object.keys(notes).length`; `Tasks.tsx` already did it right with `new Set(...).size` | `1 tag in 1 note`, and each row names the notes it lives in |
+| Library, Trash, Weekly review and Tags answered with **"‹ Sidebar"** | The label promises a destination, and `nav.back` is the history stack | "‹ Home", wired to Home — on a phone these are fullscreen, so history was the only navigation they had, and it never led home |
+| Library, Tags, Trash, Settings and Weekly review were reachable only by tapping the word **"Atonacht"** | It was already a `<button>` that opened the drawer, and looked like a logo | Full-width header row with a menu icon at the right. No new route, no new state |
+
+Tests: `src/tests/morechrome.test.tsx` (one column at a time and the pills name them; the tag count and the notes
+under it; the bar says Home and goes Home).
+
+Side fix: `describeWhen` compared against the wall clock, so `natural.test.ts`'s fixed Monday flipped from
+"tomorrow" to "today" at midnight. It takes the day the words were typed as an argument.
