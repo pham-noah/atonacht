@@ -3,7 +3,7 @@ import { folderCounts } from "../lib/fs";
 import { nextOccurrence } from "../lib/dates";
 import { addTask, editTask, groupTasks, parseTasks, toggleTask } from "../lib/tasks";
 import { applyCarryOver, dailyPath, dailyTemplate, findCarryOver } from "../lib/daily";
-import { conflictCopyPath, parseConflict } from "../lib/conflicts";
+import { conflictCopyPath, isConflictPath, parseConflict } from "../lib/conflicts";
 import { diffLines } from "../lib/diff";
 import { matchSnippet, noteTitle, renderBlocks, renderMarkdown, snippet } from "../lib/markdown";
 import { createMemFs } from "../lib/memFs";
@@ -78,9 +78,16 @@ describe("daily notes and carry-over", () => {
 describe("conflicts and diff", () => {
   it("parses Syncthing conflict names", () => {
     const c = parseConflict("Thesis/Outline.sync-conflict-20261029-101500-ABCDEFG.md")!;
-    expect(c).toEqual({ original: "Thesis/Outline.md", stamp: "2026-10-29 10:15", device: "ABCDEFG" });
+    expect(c).toEqual({ original: "Thesis/Outline.md", stamp: "2026-10-29 10:15", device: "ABCDEFG", source: "syncthing" });
     expect(parseConflict("Thesis/Outline.md")).toBeNull();
     expect(conflictCopyPath(c.original, c.stamp)).toBe("Thesis/Outline (conflict 2026-10-29).md");
+  });
+  it("parses the copy GitHub sync leaves beside a note, which is a conflict too", () => {
+    const c = parseConflict("Games/Tide roguelike (github).md")!;
+    expect(c).toEqual({ original: "Games/Tide roguelike.md", stamp: "", device: "GitHub", source: "github" });
+    expect(isConflictPath("Games/Tide roguelike (github).md")).toBe(true);
+    expect(parseConflict("Games/my github notes.md")).toBeNull(); // no space and no suffix: an ordinary note
+    expect(conflictCopyPath(c.original, "2026-11-23")).toBe("Games/Tide roguelike (conflict 2026-11-23).md");
   });
   it("diffs lines", () => {
     const d = diffLines("a\nb\nc", "a\nx\nc");
@@ -479,6 +486,19 @@ describe("folder counts for the sidebar", () => {
     expect(counts.get("Thesis")).toBe(2); // its own note and the one a folder down
     expect(counts.get("Thesis/chapters")).toBe(1);
     expect(counts.get("Loose")).toBeUndefined(); // a note at the root is not a folder
+  });
+  it("the demo layer lists notes, not the pictures beside them", async () => {
+    const mem = createMemFs({
+      dirs: ["Attachments"],
+      files: {
+        "Plan.md": { content: "# Plan\n", mtime: 1 },
+        "Attachments/shot.png": { content: "data:image/png;base64,AAAA", mtime: 2 },
+      },
+    });
+    const listed = (await mem.list("demo")).filter((e) => e.kind === "file").map((e) => e.path);
+    expect(listed).toEqual(["Plan.md"]);
+    // and the picture is still readable by the path a note links to
+    expect((await mem.readBytes!("demo", "Attachments/shot.png")).length).toBe(3); // "AAAA" is three bytes
   });
 });
 

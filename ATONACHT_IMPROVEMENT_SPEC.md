@@ -29,11 +29,11 @@ The UI was driven **for real** this time in Chromium (headless, 390×844, 2× DP
 file layer, so the claims below have screenshots and DOM assertions behind them, not just unit tests. Evidence
 files are in `docs/improvement-evidence/` (see the index there).
 
-## 0b. Status — fifth pass (2026-11-23): seven bugs found by driving the app
+## 0b. Status — fifth pass (2026-11-23): ten bugs found by driving the app
 
 Written against `master` with the app running in Chromium (`npx vite`, demo file layer, `localStorage` key
 `atonacht.demo`) plus the code behind each one. Gate on the final tree: `npx tsc --noEmit` clean,
-`npx vitest run` **252/252 passing** (44 files), `npm run build` clean. Nothing was version-bumped, tagged or released.
+`npx vitest run` **257/257 passing** (45 files), `npm run build` clean. Nothing was version-bumped, tagged or released.
 Evidence: `docs/improvement-evidence/fifth-pass/`.
 
 | # | Bug | Why it happened | Fixed |
@@ -45,6 +45,9 @@ Evidence: `docs/improvement-evidence/fifth-pass/`.
 | 5 | On a desktop window a search filtered the notes list with **no sign of the filter and no way to clear it** | the search field is only drawn on narrow screens (`{!wide && …}`), and the query arrives from the sidebar, which the list does not clear | a query-hint row on both widths: `“rent” · 3 notes` plus **Clear** |
 | 6 | `tag:thesis` matched `#thesis-2` and `#thesis2026` | the tag test was `new RegExp("#" + tag + "\\b")`, and `-` is a non-word character, so the boundary sat between `thesis` and `-2` | `(?![\\w-])` after the tag |
 | 7 | **Clear local version history** threw away every earlier version on one click | no confirmation, unlike the other destructive rows | a `confirm()` naming what is lost, and what is not (the notes) |
+| 8 | A backup was **notes only**: restoring one brought the notes back with every picture and file they link broken | `buildBackup` zipped the note texts and nothing else, so `Attachments/…` never travelled; restore had nothing to write back | export reads each linked file through the folder layer and stores it at its own path; restore writes the bytes back, skipping a file that is already there |
+| 9 | The browser demo listed **pictures as notes** — a shot in `Attachments/` appeared in Notes and Library, in the folder counts, and in “N notes” | `memFs.list` returned every file, while the desktop (`is_markdown`) and Android (`isNote`) layers list only notes, and the store trusts the layer | the demo layer applies the same `.md` filter as the real ones; a test pins all three |
+| 10 | A GitHub-sync copy (`Note (github).md`) sat in the notes list as an ordinary note: the conflicts screen only knew Syncthing's naming, so the second version was never merged — and went back up on the next push | `parseConflict` only matched Syncthing's name pattern | the copy parses as a conflict with `source: "github"`; the screen names where it came from, dates it from its mtime, and “keep both” keeps it as `Note (conflict YYYY-MM-DD).md` |
 
 Reproduced live before the fix (same demo file layer, 1100×760): renaming `Zeta` to the existing `Packing list`
 left `Personal/Packing list.md` holding `# Zeta`, with the note it replaced gone; ticking the only task in a note

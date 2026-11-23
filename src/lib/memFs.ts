@@ -51,7 +51,8 @@ export function createMemFs(seed?: Store, persist = false): NotesFs {
     ensureRoot: async () => {},
     list: async () => {
       const files: Entry[] = Object.entries(store.files)
-        .filter(([p]) => !hidden(p))
+        // Notes, like the desktop and phone layers list: a picture in Attachments/ is a file you can link, not a note.
+        .filter(([p]) => !hidden(p) && /\.md$/i.test(p))
         .map(([path, v]) => ({ path, kind: "file", mtime: v.mtime, size: v.content.length }));
       const dirs: Entry[] = store.dirs.filter((p) => !hidden(p)).map((path) => ({ path, kind: "dir", mtime: 0, size: 0 }));
       return [...dirs, ...files];

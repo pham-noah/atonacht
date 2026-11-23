@@ -65,6 +65,15 @@ describe("backup", () => {
     expect(back.settings).toEqual({ theme: "glass" });
     expect(backupName(new Date(2026, 9, 29))).toBe("atonacht-backup-2026-10-29.zip");
   });
+
+  it("carries an attachment at its own path, bytes and all, and refuses a path that climbs out", () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff]);
+    const zip = buildBackup({ "a.md": "![x](Attachments/x.png)\n" }, {}, { "Attachments/x.png": png, "../evil.png": png });
+    const back = readBackup(zip);
+    expect(Array.from(back.attachments["Attachments/x.png"])).toEqual(Array.from(png));
+    expect(back.attachments["../evil.png"]).toBeUndefined();
+    expect(back.notes["Attachments/x.png"]).toBeUndefined(); // bytes are not text
+  });
 });
 
 describe("Syncthing status", () => {

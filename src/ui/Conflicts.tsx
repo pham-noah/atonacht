@@ -6,6 +6,9 @@ import { Resolution, useStore } from "../store";
 import { BackBar, PageHead } from "./common";
 
 const PICK_LABEL: Record<Pick, string> = { mine: "This device", theirs: "Other device", both: "Both" };
+/** "Other device" is wrong when the other side is a GitHub copy: name where it came from. */
+const pickLabel = (how: Pick, source: string) => (how === "theirs" && source === "github" ? "GitHub" : PICK_LABEL[how]);
+const otherName = (source: string) => (source === "github" ? "GitHub" : "another device");
 
 /**
  * Two versions of one note, with three ways out: take one side, keep both as separate notes, or merge line by line.
@@ -55,7 +58,7 @@ export function Conflicts() {
         <p className="muted small">
           {hunks === 0
             ? "The two versions are already identical — saving keeps one note."
-            : `${hunks} place${hunks === 1 ? "" : "s"} where they differ. “Both” keeps this device's lines first, then the other device's.`}
+            : `${hunks} place${hunks === 1 ? "" : "s"} where they differ. “Both” keeps this device's lines first, then ${otherName(c.source)}'s.`}
         </p>
         <div className="merge">
           {rows.map((row, i) => row.kind === "same"
@@ -65,7 +68,7 @@ export function Conflicts() {
                 <div className="mpick">
                   {(["mine", "theirs", "both"] as Pick[]).map((how) => (
                     <button key={how} className={`pill${pickOf(row.id) === how ? " on" : ""}`} onClick={() => setPicks((p) => ({ ...p, [row.id]: how }))}>
-                      {PICK_LABEL[how]}
+                      {pickLabel(how, c.source)}
                     </button>
                   ))}
                 </div>
@@ -87,11 +90,15 @@ export function Conflicts() {
   return (
     <>
       <BackBar label="Home" right={<span className="chip hi">1 of {conflicts.length}</span>} />
-      <PageHead sub={`${c.original} · edited on two devices`} title="Sync conflict" />
-      <p className="muted">Syncthing kept both versions of “{noteTitle(c.original, mine)}” because two devices changed it at the same time. Syncthing cannot merge them — it only stores files — so pick one, keep both, or merge them here.</p>
+      <PageHead sub={`${c.original} · ${c.source === "github" ? "edited here and on GitHub" : "edited on two devices"}`} title="Sync conflict" />
+      <p className="muted">
+        {c.source === "github"
+          ? `GitHub had a different version of “${noteTitle(c.original, mine)}” than this device. Pushing either one over the other would lose work, so both are here: pick one, keep both, or merge them.`
+          : `Syncthing kept both versions of “${noteTitle(c.original, mine)}” because two devices changed it at the same time. Syncthing cannot merge them — it only stores files — so pick one, keep both, or merge them here.`}
+      </p>
       <div className="diffs">
         {col(left, "On this device", "The version you have now")}
-        {col(right, "From another device", `${c.stamp} · ${c.device}`)}
+        {col(right, c.source === "github" ? "From GitHub" : "From another device", `${c.stamp} · ${c.device}`)}
       </div>
       {/* Two columns do not fit a phone: there, one column with both sides interleaved compares at a glance. */}
       <div className="unified card">
@@ -107,7 +114,7 @@ export function Conflicts() {
       <div className="btnrow">
         <button className="btn" disabled={busy} onClick={() => setMerging(true)}>Merge by hand</button>
         <button className="pill" disabled={busy} onClick={() => act("mine")}>Keep this device</button>
-        <button className="pill" disabled={busy} onClick={() => act("theirs")}>Keep other device</button>
+        <button className="pill" disabled={busy} onClick={() => act("theirs")}>{c.source === "github" ? "Keep GitHub’s" : "Keep other device"}</button>
         <button className="pill" disabled={busy} onClick={() => act("both")}>Keep both</button>
       </div>
     </>

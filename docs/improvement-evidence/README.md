@@ -33,6 +33,9 @@ each one.
 | `fifth-pass/01-done-chip-in-preview.png` | A task ticked in the reading view is written as `- [x] Buy milk @done(2026-11-23)` — so it reaches *Done* and the weekly review — and the date shows as an unstruck `done 23 Nov` chip instead of a raw tag. |
 | `fifth-pass/02-rename-clash-refused.png` | Renaming `Zeta` to the existing `Packing list`: the sheet stays open with *A note called “Packing list” is already here.* in red and **Rename** disabled; both files are untouched. |
 | `fifth-pass/03-desktop-search-hint.png` | A search run from the sidebar at desktop width now shows `“passport” · 1 note` with a **Clear** button above the filtered list. |
+| `fifth-pass/04-github-conflict-home.png` | A GitHub-sync copy is a conflict, not a stray note: Home offers `1 sync conflict to review` while `Personal` counts one note, not two. |
+| `fifth-pass/05-github-conflict-screen.png` | The conflict screen for a GitHub copy: `edited here and on GitHub`, a `From GitHub` column stamped with the day it arrived, and **Keep GitHub’s** among the choices. |
+| `fifth-pass/06-backup-with-attachment.png` | After the fix: *Saved a backup of 3 notes and 1 attachment.* — and the ZIP itself contains `Attachments/2026-11-23-120000-shot.png` beside the note that links it (`size=1399`). The picture is not counted as a note (§0b #9). |
 
 DOM assertions from the same runs (not visible in a still):
 

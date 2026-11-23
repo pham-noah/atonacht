@@ -5,11 +5,11 @@ import { noteCache } from "./lib/noteCache";
 import { noteHistory } from "./lib/noteHistory";
 import { planTrashCleanup, stampPath, unstampPath } from "./lib/trash";
 import type { Entry } from "./lib/fs";
-import { addDays, today } from "./lib/dates";
+import { addDays, fmt, today } from "./lib/dates";
 import { dailyContent, dailyPath, setDailyDir } from "./lib/daily";
 import { isPinned, setPinned } from "./lib/frontmatter";
 import { DAILY_TEMPLATE, STARTERS, isTemplatePath } from "./lib/templates";
-import { conflictCopyPath, parseConflict } from "./lib/conflicts";
+import { ConflictSource, conflictCopyPath, parseConflict } from "./lib/conflicts";
 import { rewriteLinks } from "./lib/backlinks";
 import { plural } from "./lib/plural";
 import { isKanbanNote } from "./lib/boardNote";
@@ -28,6 +28,7 @@ export interface Conflict {
   original: string;
   stamp: string;
   device: string;
+  source: ConflictSource; // "syncthing" | "github" — decides what the screen says it is
 }
 export type Resolution = "mine" | "theirs" | "both";
 
@@ -248,13 +249,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const templates: Record<string, string> = {};
     for (const p in all) {
       const c = parseConflict(p);
-      if (c) conflicts.push({ path: p, ...c });
-      else if (isTemplatePath(p)) templates[p] = all[p];
+      if (c) {
+        // A GitHub copy carries no date in its name; the day it was written is the day of its mtime.
+        conflicts.push({ ...c, path: p, stamp: c.stamp || fmt(new Date(data[p]?.mtime ?? Date.now())) });
+      } else if (isTemplatePath(p)) templates[p] = all[p];
       else notes[p] = all[p];
     }
     conflicts.sort((a, b) => a.stamp.localeCompare(b.stamp));
     return { conflicts, notes, templates };
-  }, [all]);
+  }, [all, data]);
   const boards = useMemo(() => Object.keys(notes).filter((p) => isKanbanNote(notes[p])).sort(), [notes]);
   const pinned = useMemo(() => Object.keys(notes).filter((p) => isPinned(notes[p])), [notes]);
   const mtimes = useMemo(() => Object.fromEntries(Object.entries(data).map(([p, n]) => [p, n.mtime])), [data]);

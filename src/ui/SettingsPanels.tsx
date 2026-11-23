@@ -13,6 +13,7 @@ import { syncthingFetcher } from "../lib/syncthingFetch";
 import { githubFetcher } from "../lib/githubFetch";
 import { parseRepo, pullNotes, pushNotes } from "../lib/github";
 import { describeOutcome, syncWithGitHub } from "../lib/githubSync";
+import { attachmentsIn } from "../lib/attachments";
 import { Choice, Group, Row, Slider, TimeField, Toggle } from "./SettingsParts";
 
 const THEMES: [Theme, string, string][] = [
@@ -697,8 +698,18 @@ export function FilesPanel() {
       const { root: _r, syncthingKey: _k, ...settings } = prefs; // never export the folder handle or the API key
       void _r; void _k;
       const { backupName, buildBackup } = await import("../lib/backup"); // the ZIP library loads only when you use it
-      const ok = await saveBytes(backupName(), buildBackup(all, settings));
-      setMsg(ok ? `Saved a backup of ${Object.keys(all).length} notes.` : "Cancelled.");
+      // A note's pictures and files live in the same folder, not in the note: read them back through it so the ZIP can
+      // put them where the links point. One that has gone missing is a broken link, not a reason to refuse the backup.
+      const attachments: Record<string, Uint8Array> = {};
+      if (fs.readBytes) {
+        const paths = [...new Set(Object.values(all).flatMap(attachmentsIn))];
+        for (const p of paths) {
+          try { attachments[p] = await fs.readBytes(prefs.root, p); } catch { /* the file is already gone */ }
+        }
+      }
+      const ok = await saveBytes(backupName(), buildBackup(all, settings, attachments));
+      const files = Object.keys(attachments).length;
+      setMsg(ok ? `Saved a backup of ${Object.keys(all).length} notes${files ? ` and ${files} attachment${files === 1 ? "" : "s"}` : ""}.` : "Cancelled.");
     } catch (e) {
       setMsg(`Could not save the backup: ${e instanceof Error ? e.message : e}`);
     }
@@ -707,19 +718,31 @@ export function FilesPanel() {
     setMsg("");
     try {
       const { readBackup } = await import("../lib/backup");
-      const { notes, settings } = readBackup(new Uint8Array(await file.arrayBuffer()));
+      const { notes, settings, attachments } = readBackup(new Uint8Array(await file.arrayBuffer()));
       let added = 0;
       let skipped = 0;
       for (const [p, c] of Object.entries(notes)) {
         if (all[p] !== undefined) skipped++;
         else { await save(p, c); added++; }
       }
+      // Pictures and files go back at their own paths. One that is already in the folder is the same file from an
+      // earlier restore and is left alone, so a newer copy is never overwritten by an older backup.
+      let files = 0;
+      if (fs.writeBytes) {
+        for (const [p, bytes] of Object.entries(attachments)) {
+          if (fs.readBytes) {
+            try { await fs.readBytes(prefs.root, p); continue; } catch { /* not there yet */ }
+          }
+          await fs.writeBytes(prefs.root, p, bytes);
+          files++;
+        }
+      }
       if (withSettings && settings && typeof settings === "object") {
         const { root: _r, syncthingKey: _k, onboarded: _o, ...rest } = settings as Record<string, unknown>;
         void _r; void _k; void _o;
         setPrefs(rest as Partial<typeof prefs>);
       }
-      setMsg(`Restored ${added} note${added === 1 ? "" : "s"}. ${skipped} already existed and were left alone.`);
+      setMsg(`Restored ${added} note${added === 1 ? "" : "s"}${files ? ` and ${files} attachment${files === 1 ? "" : "s"}` : ""}. ${skipped} already existed and were left alone.`);
     } catch (e) {
       setMsg(`That doesn’t look like an Atonacht backup: ${e instanceof Error ? e.message : e}`);
     }
@@ -727,7 +750,7 @@ export function FilesPanel() {
   return (
     <>
       <Group title="Back up">
-        <Row label="Export all notes" hint={`${Object.keys(all).length} notes and your settings, as one ZIP file`}><button className="btn" onClick={exportAll}>Export…</button></Row>
+        <Row label="Export all notes" hint={`${Object.keys(all).length} notes, the pictures they link, and your settings, as one ZIP file`}><button className="btn" onClick={exportAll}>Export…</button></Row>
         <p className="muted small">Your notes are already plain files in your notes folder. A ZIP is a convenient copy to keep somewhere else.</p>
       </Group>
       <Group title="Restore">

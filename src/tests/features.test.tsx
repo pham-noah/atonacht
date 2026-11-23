@@ -92,15 +92,42 @@ describe("settings: tab order, backup, privacy, Syncthing", () => {
     expect(back.notes["Game ideas/Tide roguelike.md"]).toContain("Every wave flips");
     expect(JSON.stringify(back.settings)).not.toContain("demo"); // the folder handle is never exported
 
-    const zip = buildBackup({ "New/restored.md": "# Restored\n", "Game ideas/Tide roguelike.md": "SHOULD NOT OVERWRITE" }, { theme: "light", root: "x" });
+    const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const zip = buildBackup({ "New/restored.md": "# Restored\n", "Game ideas/Tide roguelike.md": "SHOULD NOT OVERWRITE" }, { theme: "light", root: "x" }, { "Attachments/2026-11-23-120000-shot.png": png });
     fireEvent.click(screen.getByLabelText("Restore settings too"));
     const input = screen.getByLabelText("Backup file") as HTMLInputElement;
     fireEvent.change(input, { target: { files: [new File([zip as BlobPart], "b.zip", { type: "application/zip" })] } });
-    await screen.findByText(/Restored 1 note\. 1 already existed/);
+    await screen.findByText(/Restored 1 note and 1 attachment\. 1 already existed/);
     expect(files()["New/restored.md"].content).toBe("# Restored\n");
     expect(files()["Game ideas/Tide roguelike.md"].content).not.toContain("SHOULD NOT");
+    // the picture comes back too, at the path the note's link already points at
+    await waitFor(() => expect(Object.keys(files()).some((p) => p === "Attachments/2026-11-23-120000-shot.png")).toBe(true));
     await waitFor(() => expect(prefs().theme).toBe("light"));
     expect(prefs().root).toBe("demo"); // restoring never changes which folder you use
+  });
+
+  it("exports the pictures a note links, not just the note", async () => {
+    const link = "Attachments/2026-11-23-120000-shot.png";
+    localStorage.setItem("atonacht.demo", JSON.stringify({
+      dirs: ["Attachments"],
+      files: {
+        "Pic.md": { content: `# Pic\n\n![shot.png](${link})\n`, mtime: Date.now() },
+        [link]: { content: `data:image/png;base64,${btoa(String.fromCharCode(137, 80, 78, 71, 13, 10, 26, 10))}`, mtime: Date.now() },
+      },
+    }));
+    await boot();
+    let blob: Blob | undefined;
+    (URL as unknown as { createObjectURL: (b: Blob) => string }).createObjectURL = (b) => ((blob = b), "blob:test");
+    (URL as unknown as { revokeObjectURL: () => void }).revokeObjectURL = () => {};
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    await openSettings(/^Files & backup/);
+    fireEvent.click(await screen.findByRole("button", { name: "Export…" }));
+    await screen.findByText(/Saved a backup of .* and 1 attachment/);
+
+    const back = readBackup(new Uint8Array(await blob!.arrayBuffer()));
+    // the same path the note's link uses, with the bytes in it
+    expect(Array.from(back.attachments[link])).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(Object.values(back.notes).some((c) => c.includes(link))).toBe(true);
   });
 
   it("explains that app lock is a phone feature", async () => {
