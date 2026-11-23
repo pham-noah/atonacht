@@ -23,6 +23,17 @@ picture is the app running, not a mock. Screenshots are full-viewport.
 | `attachment-written-line.png` | The line the attach wrote into the note: `![big.jpg](Attachments/2026-11-14-222112-big.jpg)` — the picture is a file in `Attachments/`, not inline data. |
 | `search-hit-line.png` | Searching `rent` in a 41-line note shows `- [ ] Pay rent by Friday` with **rent** marked, not the note's opening line. |
 
+## Fifth pass (2026-11-23) — bugs found by driving the app
+
+Same setup (`npx vite`, demo file layer), 1100×760 desktop window this time. See §0b of the spec for the cause of
+each one.
+
+| File | What it proves |
+|------|----------------|
+| `fifth-pass/01-done-chip-in-preview.png` | A task ticked in the reading view is written as `- [x] Buy milk @done(2026-11-23)` — so it reaches *Done* and the weekly review — and the date shows as an unstruck `done 23 Nov` chip instead of a raw tag. |
+| `fifth-pass/02-rename-clash-refused.png` | Renaming `Zeta` to the existing `Packing list`: the sheet stays open with *A note called “Packing list” is already here.* in red and **Rename** disabled; both files are untouched. |
+| `fifth-pass/03-desktop-search-hint.png` | A search run from the sidebar at desktop width now shows `“passport” · 1 note` with a **Clear** button above the filtered list. |
+
 DOM assertions from the same runs (not visible in a still):
 
 - `[...document.querySelectorAll('a.ext')]` → `[["Google","https://google.com"]]`, `rel="noopener noreferrer"`.

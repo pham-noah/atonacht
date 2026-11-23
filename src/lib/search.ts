@@ -64,7 +64,8 @@ export function noteMatches(q: Query, path: string, content: string, tasks: Task
 
   const lower = content.toLowerCase();
   if (q.tags.length) {
-    for (const tag of q.tags) if (!new RegExp(`#${tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(content)) return false;
+    // A tag ends where the tag stops: "#thesis" must not match "#thesis-2" or "#thesis2026".
+    for (const tag of q.tags) if (!new RegExp(`#${tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])`, "i").test(content)) return false;
   }
   if (q.has === "link" && !/\[\[[^\]]+\]\]/.test(content)) return false;
 

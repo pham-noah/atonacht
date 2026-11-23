@@ -29,7 +29,31 @@ The UI was driven **for real** this time in Chromium (headless, 390×844, 2× DP
 file layer, so the claims below have screenshots and DOM assertions behind them, not just unit tests. Evidence
 files are in `docs/improvement-evidence/` (see the index there).
 
+## 0b. Status — fifth pass (2026-11-23): seven bugs found by driving the app
+
+Written against `master` with the app running in Chromium (`npx vite`, demo file layer, `localStorage` key
+`atonacht.demo`) plus the code behind each one. Gate on the final tree: `npx tsc --noEmit` clean,
+`npx vitest run` **252/252 passing** (44 files), `npm run build` clean. Nothing was version-bumped, tagged or released.
+Evidence: `docs/improvement-evidence/fifth-pass/`.
+
+| # | Bug | Why it happened | Fixed |
+|---|-----|-----------------|-------|
+| 1 | Renaming a note onto a name that was already taken **destroyed the note that was there** (browser demo), and did nothing at all with no message on desktop/Android | `Notes.tsx` built the target path from the typed name with no check and closed the sheet *before* awaiting the rename. The three file layers then disagreed: `memFs.rename` replaced the existing file, `rename_note` returned `"{to} already exists"` and SAF refused — and nobody showed that error | store's `renameNote` refuses an existing destination; the sheet validates the name, disables **Rename** and says why; it stays open until the rename resolves and shows a failure in place; `memFs.rename` now throws on an existing destination like the real layers |
+| 2 | Ticking a task in the reading view **lost the day it was done**: the task disappeared from *Done* and from the weekly review | the preview's checkbox handler called `toggleTask(text, line)` with no date and no repeat config, so no `@done(…)` was written — and every list filters on that stamp | the handler now passes `today()` and `prefs.repeatFrom`, the same call every other checkbox makes |
+| 3 | A save that failed said **nothing**: the text stayed on screen, the file did not change, closing the app lost it | `save()` had no `catch`, and the one error banner is cleared by the next successful folder poll 4 s later | a separate `saveError` shows the path and the reason, and stays until that note saves or the user dismisses it |
+| 4 | The reading view showed the raw `@done(2026-11-23)` tag, struck through, inside a finished task | `inline()` chipped `@due`/`@repeat`/tags/priority but not `@done` | `@done(…)` renders as a muted `done 23 Nov` chip that is not struck through by `.md-task.done` |
+| 5 | On a desktop window a search filtered the notes list with **no sign of the filter and no way to clear it** | the search field is only drawn on narrow screens (`{!wide && …}`), and the query arrives from the sidebar, which the list does not clear | a query-hint row on both widths: `“rent” · 3 notes` plus **Clear** |
+| 6 | `tag:thesis` matched `#thesis-2` and `#thesis2026` | the tag test was `new RegExp("#" + tag + "\\b")`, and `-` is a non-word character, so the boundary sat between `thesis` and `-2` | `(?![\\w-])` after the tag |
+| 7 | **Clear local version history** threw away every earlier version on one click | no confirmation, unlike the other destructive rows | a `confirm()` naming what is lost, and what is not (the notes) |
+
+Reproduced live before the fix (same demo file layer, 1100×760): renaming `Zeta` to the existing `Packing list`
+left `Personal/Packing list.md` holding `# Zeta`, with the note it replaced gone; ticking the only task in a note
+wrote `- [x] Buy milk` with no `@done` in the `.md` file. After the fix: the sheet reads *A note called “Packing
+list” is already here.* with **Rename** disabled and both files untouched (`fifth-pass/02-rename-clash-refused.png`),
+and the tick wrote `- [x] Buy milk @done(2026-11-23)` (`fifth-pass/01-done-chip-in-preview.png`).
+
 ### Item 1 — links (done)
+
 - `renderMarkdown("see [Google](https://google.com)")` → one `a.ext` with `href`/`data-href` and
   `rel="noopener noreferrer"`; `externalHref("javascript:alert(1)")` is `null`, and the note text
   `[bad](javascript:alert(1))` stays literal in the rendered preview (checked in the live DOM, not just a test).

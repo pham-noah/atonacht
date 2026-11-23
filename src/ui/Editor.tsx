@@ -126,7 +126,7 @@ export function Editor({ path }: { path: string }) {
 
   const onPreviewClick = (e: React.MouseEvent) => {
     const el = e.target as HTMLElement;
-    if (el instanceof HTMLInputElement && el.dataset.line) change(toggleTask(text, Number(el.dataset.line)));
+    if (el instanceof HTMLInputElement && el.dataset.line) change(toggleTask(text, Number(el.dataset.line), today(), prefs.repeatFrom));
     const href = el.closest<HTMLElement>("[data-href]")?.dataset.href;
     if (href) {
       e.preventDefault();

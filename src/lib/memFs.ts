@@ -125,6 +125,9 @@ export function createMemFs(seed?: Store, persist = false): NotesFs {
       save();
     },
     rename: async (_r, from, to) => {
+      // Same rule as the real file layers: never overwrite. The demo used to replace the note that was already there,
+      // which hid a rename bug that lost notes on a phone and did nothing on the desktop.
+      if (store.files[to] !== undefined) throw new Error(`${to} already exists`);
       store.files[to] = { content: store.files[from].content, mtime: Date.now() };
       delete store.files[from];
       addDirs(to);

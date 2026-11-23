@@ -89,6 +89,12 @@ describe("conflicts and diff", () => {
 });
 
 describe("markdown", () => {
+  it("turns the day a task was finished into a chip instead of leaving the tag raw", () => {
+    const html = renderMarkdown("- [x] Ship it @done(2026-11-23)\n");
+    expect(html).toContain("done 23 Nov");
+    expect(html).not.toContain("@done(");
+  });
+
   it("escapes html and renders tasks with line numbers", () => {
     const html = renderMarkdown("# Hi <b>\n- [ ] do **it** #x @due(2026-10-30)\n<script>alert(1)</script>");
     expect(html).toContain("&lt;b&gt;");

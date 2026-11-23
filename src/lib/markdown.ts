@@ -20,6 +20,8 @@ function inline(raw: string): string {
     return url ? `<a class="ext" href="${url}" data-href="${url}" rel="noopener noreferrer">${text}</a>` : whole;
   });
   s = s.replace(/@due\((\d{4}-\d{2}-\d{2})\)/g, (_, d) => `<span class="chip">due ${shortDate(d)}</span>`);
+  // Every list stamps a finished task with the day it was done; the reading view used to leave that raw in the text.
+  s = s.replace(/@done\((\d{4}-\d{2}-\d{2})\)/g, (_, d) => `<span class="chip done">done ${shortDate(d)}</span>`);
   s = s.replace(/@repeat\(([^)]+)\)/g, '<span class="chip">↻ $1</span>');
   s = s.replace(/(^|\s)!(high|med|low)\b/g, '$1<span class="chip hi">$2</span>');
   s = s.replace(/(^|\s)#([\p{L}\p{N}_-]+)/gu, '$1<span class="chip">#$2</span>');

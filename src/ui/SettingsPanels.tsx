@@ -747,7 +747,7 @@ export function FilesPanel() {
       </Group>
       <Group title="History on this device">
         <Row label="Clear local version history" hint="Every save keeps the text it replaced, so a bad edit can be undone from History without GitHub. Clearing this cannot be undone.">
-          <button className="pill" onClick={async () => { await noteHistory.clear(); setMsg("Cleared the version history on this device."); }}>Clear</button>
+          <button className="pill" onClick={async () => { if (!confirm("Delete every earlier version Atonacht kept on this device? Your notes are not touched, but bad edits can no longer be undone from History.")) return; await noteHistory.clear(); setMsg("Cleared the version history on this device."); }}>Clear</button>
         </Row>
       </Group>
       <FolderCheck />

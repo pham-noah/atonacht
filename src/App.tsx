@@ -126,7 +126,7 @@ function Shell() {
   const kb = useKeyboard(); // pixels the on-screen keyboard covers: the bottom bar steps aside, dialogs ride above it
   const { route, go, back, canBack } = useNav();
   const { prefs } = usePrefs();
-  const { error, undo, clearUndo, ready: booted } = useStore();
+  const { error, saveError, clearSaveError, undo, clearUndo, ready: booted } = useStore();
   const [drawer, setDrawer] = useState(false);
   // the system back gesture: close what is open, step back through screens, then Home
   useAndroidBack({ canBack, back, route: route.name, goHome: () => go({ name: "home" }) });
@@ -247,6 +247,12 @@ function Shell() {
       <main className="main">
         {!wide && !full && (
           <button className="brandbtn" onClick={() => setDrawer(true)} aria-label="Open sidebar"><Logo size={28} /><span className="brandname">Atonacht</span></button>
+        )}
+        {saveError && (
+          <div className="banner warnb" role="alert">
+            <Icon name="alert" size={20} /><span className="grow small">{saveError} The text is still on screen, but the file did not change.</span>
+            <button className="ib" aria-label="Dismiss" onClick={clearSaveError}><Icon name="x" size={18} /></button>
+          </div>
         )}
         {error && route.name !== "settings" && (
           <button className="banner warnb" onClick={() => go({ name: "settings" })}>

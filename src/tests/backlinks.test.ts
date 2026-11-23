@@ -88,4 +88,14 @@ describe("search filters", () => {
     expect(parseQuery("just words").filtered).toBe(false);
     expect(describeQuery(parseQuery("tag:work due:today"))).toBe("tag #work · due today");
   });
+
+  it("matches the tag itself, not a longer tag that starts the same way", async () => {
+    const { parseQuery, noteMatches } = await import("../lib/search");
+    const q = parseQuery("tag:thesis");
+    const none = [] as never[];
+    expect(noteMatches(q, "A.md", "Reading for #thesis", none, "2026-11-05")).toBe(true);
+    expect(noteMatches(q, "A.md", "Reading for #Thesis-2", none, "2026-11-05")).toBe(false);
+    expect(noteMatches(q, "A.md", "Reading for #thesis2026", none, "2026-11-05")).toBe(false);
+    expect(noteMatches(q, "A.md", "Notes #thesis, #other", none, "2026-11-05")).toBe(true);
+  });
 });

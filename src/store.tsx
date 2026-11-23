@@ -35,6 +35,9 @@ interface Store {
   root: string;
   ready: boolean;
   error: string | null;
+  /** A save that did not reach the disk. Kept apart from `error` so the next successful folder read cannot hide it. */
+  saveError: string | null;
+  clearSaveError: () => void;
   notes: Record<string, string>; // visible notes only (no conflict copies)
   mtimes: Record<string, number>;
   templates: Record<string, string>;
@@ -79,7 +82,7 @@ interface Store {
   moveDailyNotes: (fromDir: string, toDir: string) => Promise<number>;
 }
 
-type DataKeys = "root" | "ready" | "error" | "notes" | "mtimes" | "templates" | "pinned" | "boards" | "all" | "dirs" | "tasks" | "conflicts" | "undo" | "clearUndo";
+type DataKeys = "root" | "ready" | "error" | "saveError" | "clearSaveError" | "notes" | "mtimes" | "templates" | "pinned" | "boards" | "all" | "dirs" | "tasks" | "conflicts" | "undo" | "clearUndo";
 type StoreData = Pick<Store, DataKeys>;
 type StoreActions = Omit<Store, DataKeys>;
 
@@ -101,6 +104,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<Record<string, Note>>({});
   const [dirs, setDirs] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const failedPath = useRef<string | null>(null);
   const [undo, setUndo] = useState<{ label: string; run: () => Promise<void> } | null>(null);
   useEffect(() => {
     if (!undo) return;
@@ -217,6 +222,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try {
         const mtime = await fs.write(root, path, content);
         put(path, { content, mtime, size: new TextEncoder().encode(content).length });
+        if (failedPath.current === path) {
+          failedPath.current = null;
+          setSaveError(null);
+        }
+      } catch (e) {
+        // A write that fails silently is a note the user typed and does not have: the text stays on screen, the file does
+        // not change, and closing the app loses it. Say so, and keep saying it until a save of the same note works.
+        failedPath.current = path;
+        setSaveError(`Could not save “${path}”: ${e instanceof Error ? e.message : String(e)}`);
+        throw e;
       } finally {
         writing.current--;
       }
@@ -337,6 +352,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (from === to) return 0;
       const oldName = from.split("/").pop()!.replace(/\.md$/i, "");
       const newName = to.split("/").pop()!.replace(/\.md$/i, "");
+      // Never rename on top of another note. The file layers disagree here — one overwrites, the other refuses — and an
+      // overwrite is the note that was already there, gone, with no undo.
+      if (ref.current[to] !== undefined) throw new Error(`A note called “${newName}” is already here.`);
       // Every note that pointed at the old name goes on pointing at the note, aliases and #headings included:
       // a rename that silently breaks backlinks is how a folder of notes turns into a folder of orphans.
       const touched: [string, string][] = []; // path, the content before the rewrite
@@ -415,7 +433,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       put(c.path, null);
     },
   }), [root, prefs.repeatFrom, prefs.defaultDue, refresh, save, openDaily, put]); // changes only when the folder or one of these settings does
-  const dataValue: StoreData = useMemo(() => ({ root, ready, error, notes, mtimes, templates, pinned, boards, all, dirs, tasks, conflicts, undo, clearUndo: () => setUndo(null) }), [root, ready, error, notes, mtimes, templates, pinned, boards, all, dirs, tasks, conflicts, undo]);
+  const dataValue: StoreData = useMemo(() => ({ root, ready, error, saveError, clearSaveError: () => setSaveError(null), notes, mtimes, templates, pinned, boards, all, dirs, tasks, conflicts, undo, clearUndo: () => setUndo(null) }), [root, ready, error, saveError, notes, mtimes, templates, pinned, boards, all, dirs, tasks, conflicts, undo]);
   return (
     <ActionsCtx.Provider value={actions}>
       <DataCtx.Provider value={dataValue}>{children}</DataCtx.Provider>

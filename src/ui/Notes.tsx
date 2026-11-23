@@ -19,6 +19,7 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
   const menu = useMenu();
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameTo, setRenameTo] = useState("");
+  const [renameErr, setRenameErr] = useState("");
   const { renameNote } = useStore();
   const [folderOp, setFolderOp] = useState<"rename" | "delete" | null>(null);
   const [newName, setNewName] = useState(folder ?? "");
@@ -64,10 +65,13 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
       {folder && <BackBar label="Folders" />}
       <PageHead sub={folder ? `${plural(list.length, "note")} · ${plural(open, "open task")}` : `${plural(Object.keys(notes).length, "note")} in ${plural(folders.length, "folder")}`} title={folder ?? "Notes"} right={<>{folder && <><button className="pill" onClick={() => { setNewName(folder); setOpErr(""); setFolderOp("rename"); }}>Rename</button><button className="pill" onClick={() => { setOpErr(""); setFolderOp("delete"); }}>Delete</button></>}<button className="btn" onClick={() => setCreating(true)}>New note</button></>} />
       {!wide && (
-        <>
-          <input className="in" type="search" placeholder="Search notes — tag:thesis, due:overdue" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />
-          {parsed.filtered && <p className="muted small queryhint">{describeQuery(parsed)} · {list.length} note{list.length === 1 ? "" : "s"}</p>}
-        </>
+        <input className="in" type="search" placeholder="Search notes — tag:thesis, due:overdue" aria-label="Search notes" value={q} onChange={(e) => setQ(e.target.value)} />
+      )}
+      {q.trim() && (
+        <p className="muted small queryhint">
+          {parsed.filtered ? `${describeQuery(parsed)} · ` : `“${q.trim()}” · `}{plural(list.length, "note")}
+          <button className="pill" onClick={() => setQ("")}>Clear</button>
+        </p>
       )}
       {!folder && (
         <div className="pills scrollrow">
@@ -115,25 +119,38 @@ export function Notes({ folder, query = "" }: { folder?: string; query?: string 
           <button className="pill" onClick={() => setShown((n) => n + PAGE)}>Show {Math.min(PAGE, list.length - shown)} more of {list.length}</button>
         )}
       </section>
-      {renaming && (
-        <Modal title="Rename note" onClose={() => setRenaming(null)}>
-          <input className="in" autoFocus value={renameTo} onChange={(e) => setRenameTo(e.target.value)} aria-label="Note name" />
-          <div className="btnrow">
-            <button className="pill" onClick={() => setRenaming(null)}>Cancel</button>
-            <button
-              className="btn"
-              disabled={!renameTo.trim()}
-              onClick={async () => {
-                const from = renaming;
-                const dir = from.includes("/") ? from.slice(0, from.lastIndexOf("/") + 1) : "";
-                const to = `${dir}${renameTo.trim().replace(/\.md$/, "")}.md`;
-                setRenaming(null);
-                if (to !== from) await renameNote(from, to);
-              }}
-            >Rename</button>
-          </div>
-        </Modal>
-      )}
+      {renaming && (() => {
+        const dir = renaming.includes("/") ? renaming.slice(0, renaming.lastIndexOf("/") + 1) : "";
+        const name = renameTo.trim().replace(/\.md$/i, "");
+        const to = `${dir}${name}.md`;
+        const valid = /^[^/\\.][^/\\]*$/.test(name);
+        // The same rule the editor's rename asks: a name is free only if no other note in this folder has it. Renaming on
+        // top of a note used to overwrite it on one file layer and fail silently on another; neither is worth keeping.
+        const taken = valid && to !== renaming && notes[to] !== undefined;
+        const why = !name ? "" : !valid ? "A note name can’t contain a slash or start with a dot." : taken ? `A note called “${name}” is already here.` : "";
+        return (
+          <Modal title="Rename note" onClose={() => setRenaming(null)}>
+            <input className="in" autoFocus value={renameTo} aria-label="Note name" onChange={(e) => { setRenameTo(e.target.value); setRenameErr(""); }} />
+            {why && <p className="errtext" role="alert">{why}</p>}
+            {renameErr && <p className="errtext" role="alert">{renameErr}</p>}
+            <div className="btnrow">
+              <button className="pill" onClick={() => setRenaming(null)}>Cancel</button>
+              <button
+                className="btn"
+                disabled={!valid || taken}
+                onClick={async () => {
+                  try {
+                    if (to !== renaming) await renameNote(renaming, to);
+                    setRenaming(null);
+                  } catch (e) {
+                    setRenameErr(e instanceof Error ? e.message : String(e));
+                  }
+                }}
+              >Rename</button>
+            </div>
+          </Modal>
+        );
+      })()}
       {folderOp === "rename" && folder && (
         <Modal title="Rename folder" onClose={() => setFolderOp(null)}>
           <input className="in" autoFocus value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="Folder name" />
