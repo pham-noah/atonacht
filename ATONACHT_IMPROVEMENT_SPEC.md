@@ -55,6 +55,31 @@ wrote `- [x] Buy milk` with no `@done` in the `.md` file. After the fix: the she
 list” is already here.* with **Rename** disabled and both files untouched (`fifth-pass/02-rename-clash-refused.png`),
 and the tick wrote `- [x] Buy milk @done(2026-11-23)` (`fifth-pass/01-done-chip-in-preview.png`).
 
+## 0c. Status — sixth pass (2026-11-23): two more, found by re-reading dates and conflicts
+
+The fifth pass ended with two known gaps. Fixing them meant touching the conflict code, so this pass read the
+date arithmetic and the rest of the conflict path line by line instead of driving the UI blind. Two bugs, both
+silent, both reproduced in the browser demo before and after:
+
+| # | Bug | Why it happened | Fixed |
+|---|---|---|---|
+| 11 | A task repeating **`monthly`** from the 31st was quietly on the 28th forever after one February — rent, invoices, month-end reviews all drifted | `addMonths` clamps to the target month's last day, and the *next* run starts from the clamped date, which then has no memory of the 31st | a due date on the **last day of its month** now means *the end of every month*: `2026-01-31 → 2026-02-28 → 2026-03-31`. A mid-month day stays put, and `@repeat(monthly:31)` still pins the 31st |
+| 12 | Resolving two conflicts of the same note on the **same day** overwrote the copy kept first — `X (conflict 2026-11-23).md` was the fixed name every time | `resolve("both")` built the copy path from the date alone and saved over whatever was there | `freeCopyPath` takes the first free name (`… (conflict 2026-11-23) 2.md`), and the fallback day for a copy with no date is the **local** day, not UTC's (`toISOString()` is still yesterday until 02:00 at UTC+2) |
+
+Verified live: ticking `- [ ] Pay rent @due(2026-12-31) @repeat(monthly)` wrote the next one as
+`@due(2027-01-31)` in `Personal/Rent.md` (`sixth-pass/monthly-keeps-the-end-of-the-month.png`), and the
+same-day copy case is pinned by a test that keeps an earlier `Plan (conflict <today>).md` and resolves
+another conflict of `Plan` — it lands as `Plan (conflict <today>) 2.md` with the earlier copy's text intact.
+
+Audited this pass and found sound, so nothing changed: every `button`/`link` on Home, Notes, Tasks, Board and
+Calendar has an accessible name (CDP accessibility tree, phone width); the phone board is a deliberate
+column carousel (columns stack, cards scroll sideways with a snap and a fade), not a squeezed desktop board;
+reminders do not re-notify on every poll (the plan's signature is compared before timers are set), and a
+rename already rewrites `[[links]]` in every other note, aliases and `#headings` included.
+
+Gate on the final tree: `npx tsc --noEmit` clean, `npx vitest run` **258/258 passing** (45 files), `npm run build`
+clean. Evidence: `docs/improvement-evidence/sixth-pass/`.
+
 ### Item 1 — links (done)
 
 - `renderMarkdown("see [Google](https://google.com)")` → one `a.ext` with `href`/`data-href` and

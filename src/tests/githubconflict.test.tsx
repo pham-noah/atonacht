@@ -44,4 +44,23 @@ describe("a conflict from GitHub sync", () => {
     expect(files()[kept!].content).toContain("and the plumber");
     await waitFor(() => expect(Object.keys(files()).some((p) => / \(github\)\.md$/.test(p))).toBe(false));
   });
+
+  it("keeps the copy already kept today when the same note conflicts again", async () => {
+    const today = new Date();
+    const day = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const kept = `Personal/Plan (conflict ${day}).md`;
+    const store = JSON.parse(localStorage.getItem("atonacht.demo")!);
+    store.files[kept] = { content: "# Plan\n\nKept earlier today.\n", mtime: Date.now() };
+    localStorage.setItem("atonacht.demo", JSON.stringify(store));
+
+    const { default: App } = await import("../App");
+    render(<App />);
+    fireEvent.click(await screen.findByText(/1 sync conflict to review/));
+    fireEvent.click(await screen.findByRole("button", { name: "Keep both" }));
+    await screen.findByText("No conflicts. Everything is in sync.");
+
+    // the earlier copy is untouched, and this one lands beside it
+    expect(files()[kept].content).toContain("Kept earlier today.");
+    expect(files()[`Personal/Plan (conflict ${day}) 2.md`].content).toContain("and the plumber");
+  });
 });

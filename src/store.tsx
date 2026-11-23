@@ -9,7 +9,7 @@ import { addDays, fmt, today } from "./lib/dates";
 import { dailyContent, dailyPath, setDailyDir } from "./lib/daily";
 import { isPinned, setPinned } from "./lib/frontmatter";
 import { DAILY_TEMPLATE, STARTERS, isTemplatePath } from "./lib/templates";
-import { ConflictSource, conflictCopyPath, parseConflict } from "./lib/conflicts";
+import { ConflictSource, freeCopyPath, parseConflict } from "./lib/conflicts";
 import { rewriteLinks } from "./lib/backlinks";
 import { plural } from "./lib/plural";
 import { isKanbanNote } from "./lib/boardNote";
@@ -424,7 +424,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const other = ref.current[c.path]?.content ?? "";
       if (how === "theirs") await save(c.original, other);
       if (how === "both") {
-        const to = conflictCopyPath(c.original, c.stamp);
+        // A free name: two conflicts for one note, or the same one resolved twice in a day, must not overwrite the copy
+        // that was kept first.
+        const to = freeCopyPath(c.original, c.stamp, (p) => ref.current[p] !== undefined);
         await save(to, other);
       }
       await fs.remove(root, c.path);

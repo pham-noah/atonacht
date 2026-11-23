@@ -23,6 +23,27 @@ picture is the app running, not a mock. Screenshots are full-viewport.
 | `attachment-written-line.png` | The line the attach wrote into the note: `![big.jpg](Attachments/2026-11-14-222112-big.jpg)` — the picture is a file in `Attachments/`, not inline data. |
 | `search-hit-line.png` | Searching `rent` in a 41-line note shows `- [ ] Pay rent by Friday` with **rent** marked, not the note's opening line. |
 
+## Sixth pass (2026-11-23) — dates and conflicts, read closely
+
+Phone-width run (390×844, demo file layer) for the layout and accessibility audit, desktop for the task itself.
+See §0c of the spec.
+
+| File | What it proves |
+|------|----------------|
+| `sixth-pass/monthly-keeps-the-end-of-the-month.png` | Ticking `- [ ] Pay rent @due(2026-12-31) @repeat(monthly)` leaves the done line behind and writes the next as `@due(2027-01-31)` — the end of the month, not a date clamped down and stuck. |
+| `sixth-pass/phone-home.png` | Home at 390 px: no clipping, no overlap, the five tab labels fit. |
+| `sixth-pass/phone-notes.png` | Notes at 390 px: the list, the folder chips and the floating **+** all clear the tab bar; the chips row scrolls sideways rather than wrapping under the button. |
+| `sixth-pass/phone-board.png` | The phone board is a column carousel on purpose — columns stack, and each column's cards scroll sideways with a snap and a right-edge fade, so a card is read one at a time instead of squeezed to 90 px. |
+
+DOM assertions from the same runs:
+
+- `Accessibility.getFullAXTree` at 390×844 on Home, Notes, All tasks, Board and Calendar: **0** `button`/`link`
+  nodes without an accessible name.
+- The conflict copy: with `Personal/Plan (conflict <today>).md` already present, resolving another conflict of
+  `Personal/Plan` with **Keep both** wrote `Personal/Plan (conflict <today>) 2.md` and left the earlier copy's text alone.
+- `nextOccurrence` over a year of month-ends: `2026-01-31 → 2026-02-28 → 2026-03-31 → 2026-04-30 → 2026-05-31`,
+  while `2026-03-15` keeps the 15th and `monthly:31` keeps its own anchor.
+
 ## Fifth pass (2026-11-23) — bugs found by driving the app
 
 Same setup (`npx vite`, demo file layer), 1100×760 desktop window this time. See §0b of the spec for the cause of

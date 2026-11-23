@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { folderCounts } from "../lib/fs";
-import { nextOccurrence } from "../lib/dates";
+import { nextOccurrence, today } from "../lib/dates";
 import { addTask, editTask, groupTasks, parseTasks, toggleTask } from "../lib/tasks";
 import { applyCarryOver, dailyPath, dailyTemplate, findCarryOver } from "../lib/daily";
-import { conflictCopyPath, isConflictPath, parseConflict } from "../lib/conflicts";
+import { conflictCopyPath, freeCopyPath, isConflictPath, parseConflict } from "../lib/conflicts";
 import { diffLines } from "../lib/diff";
 import { matchSnippet, noteTitle, renderBlocks, renderMarkdown, snippet } from "../lib/markdown";
 import { createMemFs } from "../lib/memFs";
@@ -15,6 +15,12 @@ describe("repeat rules", () => {
     expect(nextOccurrence("2026-10-29", "weekly")).toBe("2026-11-05");
     expect(nextOccurrence("2026-10-29", "weekly:mon")).toBe("2026-11-02");
     expect(nextOccurrence("2026-01-31", "monthly")).toBe("2026-02-28");
+    // …and then back to the 31st, not stuck on the 28th for good
+    expect(nextOccurrence("2026-02-28", "monthly")).toBe("2026-03-31");
+    expect(nextOccurrence("2026-04-30", "monthly")).toBe("2026-05-31"); // April has no 31st: the end of the month
+    expect(nextOccurrence("2026-03-15", "monthly")).toBe("2026-04-15"); // a mid-month day stays put
+    expect(nextOccurrence("2026-01-31", "monthly:31")).toBe("2026-02-28");
+    expect(nextOccurrence("2026-02-28", "monthly:31")).toBe("2026-03-31"); // an explicit day keeps its own anchor
     expect(nextOccurrence("2026-10-29", "monthly:5")).toBe("2026-11-05");
     expect(nextOccurrence("2026-10-29", "nonsense")).toBeNull();
   });
@@ -81,6 +87,14 @@ describe("conflicts and diff", () => {
     expect(c).toEqual({ original: "Thesis/Outline.md", stamp: "2026-10-29 10:15", device: "ABCDEFG", source: "syncthing" });
     expect(parseConflict("Thesis/Outline.md")).toBeNull();
     expect(conflictCopyPath(c.original, c.stamp)).toBe("Thesis/Outline (conflict 2026-10-29).md");
+    // the same note resolving twice in a day must not overwrite the copy kept first
+    const taken = new Set(["Thesis/Outline (conflict 2026-10-29).md"]);
+    expect(freeCopyPath(c.original, c.stamp, (p) => taken.has(p))).toBe("Thesis/Outline (conflict 2026-10-29) 2.md");
+    taken.add("Thesis/Outline (conflict 2026-10-29) 2.md");
+    expect(freeCopyPath(c.original, c.stamp, (p) => taken.has(p))).toBe("Thesis/Outline (conflict 2026-10-29) 3.md");
+    // a free name is used as-is, and a copy with no date falls back to the local day, not UTC's
+    expect(freeCopyPath(c.original, c.stamp, () => false)).toBe("Thesis/Outline (conflict 2026-10-29).md");
+    expect(conflictCopyPath("X.md", "")).toBe(`X (conflict ${today()}).md`);
   });
   it("parses the copy GitHub sync leaves beside a note, which is a conflict too", () => {
     const c = parseConflict("Games/Tide roguelike (github).md")!;

@@ -63,8 +63,17 @@ export function nextOccurrence(due: string, rule: string): string | null {
       while (parseDate(n).getDay() !== want) n = addDays(n, 1);
       return n;
     }
-    case "monthly":
-      return addMonths(due, 1, arg ? Number(arg) : undefined);
+    case "monthly": {
+      if (arg) return addMonths(due, 1, Number(arg));
+      // `@repeat(monthly)` keeps the day of the month. A task due on the 31st would clamp to the 28th in February and
+      // then stay on the 28th for good, so a due date on the last day of its month means "the end of every month".
+      const d = parseDate(due);
+      if (d.getDate() === daysInMonth(d.getFullYear(), d.getMonth())) {
+        const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        return fmt(new Date(next.getFullYear(), next.getMonth(), daysInMonth(next.getFullYear(), next.getMonth())));
+      }
+      return addMonths(due, 1);
+    }
     case "yearly":
       return addMonths(due, 12);
     default:
