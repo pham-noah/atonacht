@@ -41,6 +41,8 @@ h1,h2{margin:0}
 .pill{border-color:var(--line);background:var(--pillb);color:var(--txt);font-weight:500}.pill.on{background:var(--acc);color:var(--accT);border-color:var(--acc);font-weight:600}
 .pills{display:flex;gap:8px;flex-wrap:wrap}
 .btnrow{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.btnrow.start{justify-content:flex-start}
+/* four choices in a ragged two-row wrap: on a phone they read as a list, in the order they discard the least */
+@media (max-width:899px){.btnrow.stack{flex-direction:column;align-items:stretch}.btnrow.stack>button{width:100%;justify-content:center}}
 .ib{width:44px;height:44px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--txt);display:flex;align-items:center;justify-content:center}
 .in{width:100%;min-height:44px;border-radius:14px;border:1px solid var(--line);background:var(--fld);color:var(--txt);padding:0 14px;font:inherit}
 .in:focus-visible,button:focus-visible,.page:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
@@ -311,7 +313,7 @@ input[type=range]{accent-color:var(--acc);width:150px}
 .syncbox{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--fld)}
 
 /* a row of filters that scrolls sideways instead of wrapping into two lines of buttons */
-.scrollrow{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.scrollrow{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
 .scrollrow::-webkit-scrollbar{height:0}
 .scrollrow .pill{flex:0 0 auto}
 .emptyhint{margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:14px}

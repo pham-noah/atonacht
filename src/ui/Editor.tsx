@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, today } from "../lib/dates";
-import { Block, renderBlocks, replaceLines, sourceLines } from "../lib/markdown";
+import { Block, emptySectionIndexes, renderBlocks, replaceLines, sourceLines } from "../lib/markdown";
 import { toggleTask } from "../lib/tasks";
 import { useNav } from "../nav";
 import { useStore } from "../store";
@@ -67,6 +67,7 @@ export function Editor({ path }: { path: string }) {
   // Rendering the preview costs ~40 ms on a 20,000-line note, so it only happens when the preview is what you are
   // looking at: while typing in the editor there is nothing to show it in.
   const blocks = useMemo(() => (mode === "preview" ? renderBlocks(text) : []), [text, mode]);
+  const emptyHeads = useMemo(() => (mode === "preview" ? emptySectionIndexes(blocks) : new Set<number>()), [blocks, mode]);
   const filePick = useRef<HTMLInputElement>(null);
 
   /** An image from the picker or the clipboard goes into Attachments/ and a link to it is written into the note. */
@@ -239,7 +240,7 @@ export function Editor({ path }: { path: string }) {
       ) : (
         <div className="page preview" onClick={onPreviewClick} onDoubleClick={onPreviewDouble}>
           {blocks.map((b, k) =>
-            lineEdit && lineEdit.from === b.from && lineEdit.to === b.to ? (
+            emptyHeads.has(k) ? null : lineEdit && lineEdit.from === b.from && lineEdit.to === b.to ? (
               <LineEditor key={`e${k}`} initial={sourceLines(text, b.from, b.to)} hint="Enter saves · Shift+Enter adds a line · Esc cancels" onSave={(v) => saveLine(b, v)} onCancel={() => setLineEdit(null)} />
             ) : (
               <div key={`b${k}`} data-block={k} className="pblock" dangerouslySetInnerHTML={{ __html: b.html }} />

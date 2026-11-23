@@ -490,3 +490,22 @@ under it; the bar says Home and goes Home).
 
 Side fix: `describeWhen` compared against the wall clock, so `natural.test.ts`'s fixed Monday flipped from
 "tomorrow" to "today" at midnight. It takes the day the words were typed as an argument.
+
+## 11. The reading view, and three things that said the wrong thing
+
+A second sweep, over the screens the phone pass had not opened — the note in reading mode, Sync conflict, Trash,
+Weekly review, Settings, the palette, and the light theme.
+
+| What it looked like | Why | Now |
+| --- | --- | --- |
+| A fresh daily note read as **"Plan"**, **"Notes"**, **"Done"** in a row, with nothing under any of them | `dailyTemplate()` ships three empty sections; the preview rendered every heading it was given | Reading mode drops a heading whose section is empty. The daily note now opens on its date and nothing else. Editing still shows all three, because that is where you type |
+| Sync conflict ended *"Whatever you don't keep goes to the **.trash folder**"* | The prose had a CSS class in it | "goes to Trash" |
+| Four conflict actions wrapped into two ragged rows at 390 — the primary sat beside a secondary | `.btnrow` wraps; four labels do not fit one line | On a phone they read as an ordered stack: Merge by hand, Keep this device, Keep other device, Keep both |
+| Every palette row wore an **"Action"** chip | `r.kind === "action" && <span className="chip">Action</span>` | Gone: in a palette, every row is an action |
+| The folder chips on Notes were cut mid-word at the edge, with nothing to say they scroll | `.scrollrow` scrolls sideways with `scrollbar-width:none` | The same fade the board uses, so a clipped chip reads as "there is more" |
+
+Tests: `morechrome.test.tsx` gained the reading view (an empty heading is not rendered; the block indexes that
+remain stay in order, so editing one line still edits that line) and the palette (no row says "Action").
+
+Not changed, after looking: Trash's empty state, Weekly review's three steps, Settings' grouping, and the light
+theme's contrast (the inactive segment reads 7.9:1, its count 5.5:1).

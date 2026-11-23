@@ -223,6 +223,29 @@ export function renderBlocks(src: string): Block[] {
   return out;
 }
 
+/** A heading with nothing under it is a promise reading mode should not make: the daily template ships Plan, Notes
+ * and Done empty, and a fresh day then reads as three bold words above nothing. Deeper headings count as structure,
+ * not content, so an empty section with an empty subsection goes too. Block indexes are preserved — the preview maps
+ * them back to source lines to edit in place. */
+export function emptySectionIndexes(blocks: Block[]): Set<number> {
+  const level = (b: Block) => Number(/^<h([1-6])[\s>]/.exec(b.html)?.[1] ?? 0);
+  const bare = (html: string) => html.replace(/<[^>]*>/g, "").replace(/&[a-z#0-9]+;/gi, "x").trim().length > 0
+    || /<(img|pre|input|table|hr|blockquote)\b/.test(html);
+  const drop = new Set<number>();
+  for (let i = 0; i < blocks.length; i++) {
+    const lv = level(blocks[i]);
+    if (!lv || lv === 1) continue; // the title names the note and always stays
+    let filled = false;
+    for (let j = i + 1; j < blocks.length; j++) {
+      const deeper = level(blocks[j]);
+      if (deeper && deeper <= lv) break;
+      if (!deeper && bare(blocks[j].html)) { filled = true; break; }
+    }
+    if (!filled) drop.add(i);
+  }
+  return drop;
+}
+
 export function renderMarkdown(src: string): string {
   return renderBlocks(src).map((b) => b.html).join("\n");
 }

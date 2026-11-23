@@ -66,7 +66,7 @@ export function Palette({ onClose, onCapture }: { onClose: () => void; onCapture
         <div role="listbox" aria-label="Results">
           {results.map((r, i) => (
             <button key={r.id} role="option" aria-selected={i === sel} className={`navitem${i === sel ? " on" : ""}`} onMouseEnter={() => setSel(i)} onClick={() => choose(r)}>
-              <span className="grow">{r.label}</span>{r.hint && <span className="muted small">{r.hint}</span>}{r.kind === "action" && <span className="chip">Action</span>}
+              <span className="grow">{r.label}</span>{r.hint && <span className="muted small">{r.hint}</span>}
             </button>
           ))}
           {results.length === 0 && <p className="muted">Nothing matches.</p>}

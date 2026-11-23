@@ -110,9 +110,9 @@ export function Conflicts() {
           </div>
         ))}
       </div>
-      <p className="muted small">“Keep both” saves the other version as a separate note, so nothing is lost. Whatever you don’t keep goes to the .trash folder.</p>
-      <div className="btnrow">
-        <button className="btn" disabled={busy} onClick={() => setMerging(true)}>Merge by hand</button>
+      <p className="muted small">“Keep both” saves the other version as a separate note, so nothing is lost. Whatever you don’t keep goes to Trash.</p>
+      <div className="btnrow stack">
+              <button className="btn" disabled={busy} onClick={() => setMerging(true)}>Merge by hand</button>
         <button className="pill" disabled={busy} onClick={() => act("mine")}>Keep this device</button>
         <button className="pill" disabled={busy} onClick={() => act("theirs")}>{c.source === "github" ? "Keep GitHub’s" : "Keep other device"}</button>
         <button className="pill" disabled={busy} onClick={() => act("both")}>Keep both</button>
