@@ -26,7 +26,7 @@ export function Library() {
 
   return (
     <>
-      <BackBar label="Back" />
+      <BackBar label="Home" onBack={() => go({ name: "home" })} />
       <PageHead title="Library" />
       <div className="cap">Pinned</div>
       <section className="card list">

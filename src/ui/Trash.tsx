@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Entry } from "../lib/fs";
 import { daysLeft, unstampPath } from "../lib/trash";
+import { useNav } from "../nav";
 import { usePrefs } from "../prefs";
 import { useStore } from "../store";
 import { BackBar, PageHead } from "./common";
@@ -13,6 +14,7 @@ const ago = (secs: number | null) => {
 };
 
 export function Trash() {
+  const { go } = useNav();
   const { loadTrash, restore, purge, emptyTrash } = useStore();
   const { prefs } = usePrefs();
   const [items, setItems] = useState<Entry[] | null>(null);
@@ -22,7 +24,7 @@ export function Trash() {
 
   return (
     <>
-      <BackBar label="Back" />
+      <BackBar label="Home" onBack={() => go({ name: "home" })} />
       <PageHead sub="Deleted notes are kept here until you delete them for good" title="Trash" right={items && items.length > 0 ? <button className="pill" onClick={async () => { if (confirm(`Delete ${items.length} notes for good?`)) { await emptyTrash(); await load(); } }}>Empty trash</button> : undefined} />
       {msg && <p className="muted">{msg}</p>}
       <section className="card list">

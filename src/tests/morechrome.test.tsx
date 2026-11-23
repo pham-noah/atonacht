@@ -59,6 +59,9 @@ describe("tags", () => {
     expect(await screen.findByText("1 tag in 2 notes")).toBeTruthy();
     expect(screen.getByText("#work")).toBeTruthy();
     expect(screen.getByText("B · C")).toBeTruthy(); // where it lives, on the row itself
-    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy(); // not "Library", not "Sidebar"
+    // the bar names where it goes — and it goes there, instead of walking back through whatever came before
+    expect(document.querySelector(".bar .barlabel")!.textContent).toBe("Home");
+    fireEvent.click(document.querySelector(".bar .ib")! as HTMLElement);
+    expect(await screen.findByText("Today’s note")).toBeTruthy();
   });
 });

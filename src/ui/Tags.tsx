@@ -20,7 +20,7 @@ export function Tags() {
 
   return (
     <>
-      <BackBar label="Back" />
+      <BackBar label="Home" onBack={() => go({ name: "home" })} />
       <PageHead
         title="Tags"
         sub={tags.length ? `${tags.length} tag${tags.length === 1 ? "" : "s"} in ${tagged} note${tagged === 1 ? "" : "s"}` : "Tags are written #like-this in a note"}
