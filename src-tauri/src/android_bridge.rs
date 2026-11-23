@@ -12,6 +12,8 @@ pub fn privacy_set(block_screenshots: bool, hide_in_recents: bool) -> Result<(),
 }
 
 /// Hand a downloaded APK to Android's package installer. `true` when the installer opened.
+/// Android only: no other platform has a package installer to hand it to, and `update_install` says so itself.
+#[cfg(target_os = "android")]
 pub fn install_apk(path: &str) -> Result<bool, String> {
     imp::install_apk(path)
 }
@@ -23,9 +25,6 @@ mod imp {
     }
     pub fn privacy_set(_block: bool, _recents: bool) -> Result<(), String> {
         Ok(())
-    }
-    pub fn install_apk(_path: &str) -> Result<bool, String> {
-        Ok(false)
     }
 }
 
