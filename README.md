@@ -138,8 +138,9 @@ npm run tauri build       # desktop installers
 ```
 
 Desktop needs Rust 1.77 or newer (Tauri 2's floor) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
-`npm test` runs the TypeScript check and the 287 tests; `cargo test` runs 16 tests against the desktop file layer. CI
-runs both; pushing a tag builds installers for Windows, macOS and Linux and signs one APK per ABI.
+`npm test` runs the 287 tests, `npm run build` type-checks before it bundles; `cargo test` runs 16 tests against the
+desktop file layer. CI runs all three; pushing a tag builds installers for Windows, macOS and Linux and signs one APK
+per ABI.
 
 ```bash
 npm run android:setup     # tauri android init, then widget, share receiver, permissions, manifest and boot theme
