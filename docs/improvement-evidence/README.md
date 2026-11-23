@@ -34,6 +34,7 @@ backslash escape, then opened in the reading view.
 | `eighth-pass/01-commonmark-in-the-reading-view.png` | Every construct renders: the setext title as a heading, the outer line outside the inner quote's second border, the fence as one padded block on two lines, the hard break after "spaces", and `\*not italic\*` showing its asterisks. |
 | `eighth-pass/02-commonmark-at-desktop.png` | The same note at 1280 wide, nothing clipped: `set_preference_now` untouched by `_…_`, `<https://…>` a real link, the code block scrolling sideways rather than wrapping. |
 | `eighth-pass/03-readme-on-github.png` | The curated README as GitHub renders it — eight sections, every screenshot loading, the counts next to the commands that produce them. |
+| `eighth-pass/04-release-0.3.0-published.png` | The published v0.3.0 release: tagged at `da81993`, marked Latest, eleven downloads (four APKs, five desktop installers, the macOS bundle and the RPM). |
 
 Not a picture: the push tree a GitHub sync sends, read back from the fake server in `githubsync.test.ts` — for a
 folder holding `Note.md`, `Note (github).md`, `Note (conflict 2026-11-23).md`, `Note (conflict 2026-11-23) 2.md`
