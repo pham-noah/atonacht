@@ -1,5 +1,6 @@
 mod android_bridge;
 mod notes_fs;
+mod updater;
 
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
@@ -321,7 +322,10 @@ pub fn run() {
             local_ips,
             sync_selftest,
             write_attachment,
-            read_attachment
+            read_attachment,
+            updater::update_download,
+            updater::update_install,
+            updater::device_arch
         ]);
 
     // Fingerprint / face unlock exists on phones only.

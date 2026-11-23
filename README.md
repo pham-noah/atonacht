@@ -104,11 +104,15 @@ they fire while it runs.
 **On Android** — system folder picker (no "all files" permission), a Today widget and a quick-add widget, "Add to
 Atonacht" in the share sheet, app lock (fingerprint, face or screen lock), hide in recents, block screenshots, full screen
 with the status and navigation bars hidden, and the back gesture: it closes what is open, steps back a screen, returns to
-Home, then leaves the app. Widgets cannot tick tasks off — tapping one opens the app.
+Home, then leaves the app. Widgets cannot tick tasks off — tapping one opens the app. Updates install from inside the app:
+the update screen fetches the APK for the phone's own ABI from the release, shows the download as it arrives, checks every
+byte against the size GitHub reported, and then hands it to Android's installer — so the APK is installed by Atonacht
+instead of being left in a browser's Downloads folder.
 
 **Elsewhere** — Diagnostics (version, folder, last error, copy for a bug report), command palette (Ctrl/Cmd + K), ZIP
 backup and restore (existing notes are never overwritten), and About with the version, the licence list, an update check
-against GitHub releases and a pre-filled "Report a problem" issue.
+against GitHub releases that links to the release page (a computer cannot install an APK) and a pre-filled "Report a
+problem" issue.
 
 ## Note format
 
@@ -192,7 +196,9 @@ docs/improvement-evidence/  screenshots and DOM notes for each fix in ATONACHT_I
 - No iOS build.
 - Not yet run on hardware: Android on a physical device (the folder picker with real document providers, widgets, the
   share sheet, scheduled notifications, the screenshot and recents options), the fingerprint plugin, Syncthing's status
-  API against a live Syncthing, and the macOS and Linux builds. The Windows build has been launched and renders.
+  API against a live Syncthing, and the macOS and Linux builds. The Windows build has been launched and renders. The
+  in-app update (0.3.1) is compiled for all four Android ABIs but has not yet been pressed on a phone: it is the first
+  thing to try on one, since only a real install proves the FileProvider hand-off and the install permission.
 
 ## Release
 

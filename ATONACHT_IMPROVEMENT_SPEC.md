@@ -423,3 +423,34 @@ Evidence for all eight items: `docs/improvement-evidence/` (README index + the 3
 the live editor links, the Done paging, the task search, the rename snack, the local History list, its version preview,
 the Settings row that clears it, the preview's quote/numbered list/rule/table, the downscaled photo and the search
 result that shows its matching line).
+
+## 8. The updater, fixed in 0.3.1
+
+Not from the audit list; a defect found by comparing 0.3.0's update screen with Kairn's. Three things were wrong at once,
+and each hid the next:
+
+1. **"Download the APK" downloaded nothing.** It called `openExternal`, i.e. `ACTION_VIEW` through the opener plugin, so
+   Chrome fetched the file into Downloads and the user had to find and tap it — and "install unknown apps" was granted to
+   the *browser*, not to Atonacht.
+2. **The wrong APK was offered.** `latestRelease` took the first asset ending in `.apk`; GitHub lists
+   `…-arm.apk` first, so a 64-bit phone was handed the 32-bit build and Android refused it ("App not installed").
+3. **The button ignored the platform.** Desktop builds offered an APK they cannot install.
+
+What replaced it, in the order a press now takes:
+
+- `src/lib/update.ts` — `chooseApk` matches the asset's ABI (`arm64`, `x86_64`, `arm`, `x86`) against the architecture the
+  running build reports, falls back to `arm64` when nothing is known, and `latestRelease` now carries the asset's `size`.
+- `src-tauri/src/updater.rs` — `update_download` streams the APK into `<cacheDir>/updates` (the directory the generated
+  manifest's FileProvider exposes), refuses any host but GitHub, emits `update-progress` once per percent, and deletes the
+  file if the bytes that arrived do not match the length stated. `update_install` hands it to Android; `device_arch` is
+  what decides the ABI.
+- `android/kotlin/UpdateInstaller.kt` — `FileProvider.getUriForFile` + `ACTION_VIEW` on
+  `application/vnd.android.package-archive`, which is the installer prompt; `REQUEST_INSTALL_PACKAGES` is in
+  `android/permissions-additions.xml`.
+- `src/ui/Update.tsx` — the press turns into a bar that the bytes drive, then into "Install update"; a computer gets
+  "Open the release page" instead, because it cannot install an APK.
+
+Tests: `src/tests/update.test.tsx` (ABI choice, the first-APK regression, the whole press-download-install path on a
+simulated Pixel, and a truncated download that offers "Try again" rather than the installer) and two Rust tests in
+`updater.rs` (an asset name cannot choose a path; a short download is thrown away).
+

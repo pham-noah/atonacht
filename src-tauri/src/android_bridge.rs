@@ -11,6 +11,11 @@ pub fn privacy_set(block_screenshots: bool, hide_in_recents: bool) -> Result<(),
     imp::privacy_set(block_screenshots, hide_in_recents)
 }
 
+/// Hand a downloaded APK to Android's package installer. `true` when the installer opened.
+pub fn install_apk(path: &str) -> Result<bool, String> {
+    imp::install_apk(path)
+}
+
 #[cfg(not(target_os = "android"))]
 mod imp {
     pub fn widget_update(_json: &str) -> Result<(), String> {
@@ -18,6 +23,9 @@ mod imp {
     }
     pub fn privacy_set(_block: bool, _recents: bool) -> Result<(), String> {
         Ok(())
+    }
+    pub fn install_apk(_path: &str) -> Result<bool, String> {
+        Ok(false)
     }
 }
 
@@ -78,6 +86,20 @@ mod imp {
                 &[JValue::Object(context), JValue::Bool(block as u8), JValue::Bool(recents as u8)],
             )?;
             Ok(())
+        })
+    }
+
+    pub fn install_apk(path: &str) -> Result<bool, String> {
+        with_context(|env, context| {
+            let class = load_class(env, context, "UpdateInstaller")?;
+            let arg = env.new_string(path)?;
+            let opened = env.call_static_method(
+                class,
+                "install",
+                "(Landroid/content/Context;Ljava/lang/String;)Z",
+                &[JValue::Object(context), JValue::Object(&arg)],
+            )?;
+            Ok(opened.z().unwrap_or(false))
         })
     }
 }

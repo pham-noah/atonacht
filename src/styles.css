@@ -347,6 +347,13 @@ img.attach{max-width:100%;height:auto;border-radius:12px;margin:6px 0;display:bl
 .up-notes li{margin:3px 0}
 .up-notes code{font-size:13px}
 .up-notes hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+/* An update downloads in the app, so the button, the bar and the next button share one slot: the screen does not jump
+   under the thumb when a press turns into progress. */
+.up-do{display:flex;flex-direction:column;gap:10px}
+.up-do>.small{padding:0 2px;margin:0}
+.up-bar{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:52px;border-radius:999px;border:1px solid var(--line);background:var(--pillb);overflow:hidden}
+.up-bar-fill{position:absolute;top:0;bottom:0;left:0;background:var(--acc);opacity:.3;transition:width .18s ease-out}
+.up-bar-text{position:relative;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
 /* on a phone the two actions are the point of the screen: give them the width, one under the other */
 @media (max-width:899px){
   .updater .up-actions{flex-direction:column}
