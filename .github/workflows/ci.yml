@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+# A push that supersedes another cancels the older run: the answer for the old commit is no longer wanted,
+# and the runner minutes are not free.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   web:
     name: Types, tests and web build
